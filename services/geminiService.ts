@@ -42,9 +42,14 @@ export const fleshOutCharacter = async (
         backstory: partialChar.backstory,
     };
 
+    const genrePrompt = partialChar.genre
+      ? `The user has specified a genre/tone: "${partialChar.genre}". Write as if this character lives in a world of that genre. For example, for "Cyberpunk", think gritty megacities and advanced technology. For "High Fantasy", think epic quests and magical creatures.`
+      : "The user has not specified a genre. You can assume a standard fantasy setting, but feel free to be creative.";
+
     const prompt = `
-      You are a creative writer and world-building expert for fantasy roleplaying games.
+      You are a creative writer and world-building expert for roleplaying games.
       A user has provided a partial character description. Your task is to flesh out the missing details or creatively enhance the existing ones.
+      ${genrePrompt}
       Please generate a complete character profile based on the provided data.
       If a field is empty, create a compelling entry for it. If a field has content, you can either use it as inspiration or subtly improve it.
       Return ONLY a valid JSON object that strictly adheres to the provided schema. Do not include any explanatory text, markdown formatting, or anything outside of the JSON structure.

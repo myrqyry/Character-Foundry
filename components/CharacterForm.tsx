@@ -1,15 +1,16 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Character, PartialCharacter } from '../types';
+import { Character, PartialCharacter, Genre } from '../types';
 import Button from './Button';
-import { ArrowLeftIcon, SparklesIcon, TrashIcon, DownloadIcon, UploadIcon, UserIcon } from './Icons';
+import { ArrowLeftIcon, SparklesIcon, TrashIcon, UserIcon, UploadIcon } from './Icons';
 import { fleshOutCharacter } from '../services/geminiService';
+import { useCharacterStore, useStoreActions } from '../store';
+import GenreSelect from './GenreSelect';
+import ImportExportMenu from './ImportExportMenu';
 
 interface CharacterFormProps {
   initialCharacter: Character | null;
-  onSave: (character: Character) => void;
   onBack: () => void;
-  onDelete: (id: string) => void;
 }
 
 const InputField: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string }> = ({ label, id, ...props }) => (
@@ -26,9 +27,11 @@ const TextareaField: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement> 
   </div>
 );
 
-const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onSave, onBack, onDelete }) => {
+const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack }) => {
   const [character, setCharacter] = useState<Partial<Character>>({});
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const { addCharacter, updateCharacter, deleteCharacter } = useStoreActions();
+  const genres = useCharacterStore((state) => state.genres);
 
   useEffect(() => {
     setCharacter(initialCharacter || {});
@@ -37,6 +40,10 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onSave,
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setCharacter(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleGenreChange = (genre: Genre) => {
+    setCharacter(prev => ({ ...prev, genre }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'image' | 'audio') => {
@@ -80,19 +87,22 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onSave,
       backstory: character.backstory || '',
       portraitBase64: character.portraitBase64 || null,
       voiceSampleBase64: character.voiceSampleBase64 || null,
+      genre: character.genre,
     };
-    onSave(finalCharacter);
+
+    if (initialCharacter) {
+      updateCharacter(finalCharacter);
+    } else {
+      addCharacter(finalCharacter);
+    }
+    onBack();
   };
   
-  const handleExport = () => {
-    const dataStr = JSON.stringify(character, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = `${character.name?.replace(/\s+/g, '_') || 'character'}.json`;
-
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+  const handleDelete = () => {
+    if (initialCharacter && window.confirm("Are you sure you want to delete this character? This action cannot be undone.")) {
+      deleteCharacter(initialCharacter.id);
+      onBack();
+    }
   };
 
   return (
@@ -103,18 +113,13 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onSave,
                 Back to Dashboard
             </Button>
             <div className="flex items-center gap-2">
-                 {initialCharacter && (
-                    <Button onClick={handleExport} variant="secondary">
-                        <DownloadIcon className="mr-2 h-4 w-4" />
-                        Export
-                    </Button>
-                 )}
-                 {initialCharacter && (
-                    <Button onClick={() => onDelete(initialCharacter.id)} variant="danger">
+                <ImportExportMenu character={character} />
+                {initialCharacter && (
+                    <Button onClick={handleDelete} variant="danger">
                         <TrashIcon className="mr-2 h-4 w-4" />
                         Delete
                     </Button>
-                 )}
+                )}
             </div>
         </header>
 
@@ -159,6 +164,11 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onSave,
             <div className="md:col-span-2 space-y-4">
                 <InputField label="Name" id="name" name="name" value={character.name || ''} onChange={handleChange} />
                 <InputField label="Title" id="title" name="title" value={character.title || ''} onChange={handleChange} />
+                <GenreSelect
+                    value={character.genre}
+                    onChange={handleGenreChange}
+                    genres={genres}
+                />
                 <TextareaField label="Synopsis" id="synopsis" name="synopsis" value={character.synopsis || ''} onChange={handleChange} />
             </div>
         </div>

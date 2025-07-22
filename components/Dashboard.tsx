@@ -3,6 +3,7 @@ import React from 'react';
 import { Character } from '../types';
 import { PlusIcon, UserIcon } from './Icons';
 import Button from './Button';
+import ImportExportMenu from './ImportExportMenu';
 
 interface CharacterCardProps {
   character: Character;
@@ -24,6 +25,11 @@ const CharacterCard: React.FC<CharacterCardProps> = ({ character, onEdit }) => (
     <div className="p-4 flex flex-col flex-grow">
       <h3 className="text-xl font-bold text-white truncate">{character.name || 'Untitled Character'}</h3>
       <p className="text-sm text-indigo-400 mb-2 truncate">{character.title || 'No title'}</p>
+      {character.genre && (
+        <span className="mb-2 inline-block bg-indigo-500/20 text-indigo-300 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full self-start">
+            {character.genre}
+        </span>
+      )}
       <p className="text-gray-400 text-sm flex-grow line-clamp-3">{character.synopsis || 'No synopsis provided.'}</p>
       <p className="text-xs text-gray-500 mt-3 self-end">Created: {new Date(character.createdAt).toLocaleDateString()}</p>
     </div>
@@ -41,10 +47,13 @@ const Dashboard: React.FC<DashboardProps> = ({ characters, onEditCharacter, onCr
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-white">Character Dashboard</h1>
-        <Button onClick={onCreateNew}>
-          <PlusIcon className="mr-2 h-5 w-5" />
-          Create New Character
-        </Button>
+        <div className="flex items-center gap-2">
+            <ImportExportMenu character={{}} />
+            <Button onClick={onCreateNew}>
+              <PlusIcon className="mr-2 h-5 w-5" />
+              Create New Character
+            </Button>
+        </div>
       </div>
 
       {characters.length > 0 ? (

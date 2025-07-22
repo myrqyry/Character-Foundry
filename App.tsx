@@ -1,48 +1,29 @@
 
-import React, { useState, useCallback } from 'react';
-import { Character, View } from './types';
-import useLocalStorage from './hooks/useLocalStorage';
+import React, { useCallback } from 'react';
+import { View } from './types';
 import Dashboard from './components/Dashboard';
 import CharacterForm from './components/CharacterForm';
 import { SparklesIcon } from './components/Icons';
+import { useCharacterStore, useStoreActions } from './store';
 
 function App() {
-  const [characters, setCharacters] = useLocalStorage<Character[]>('characters', []);
-  const [currentView, setCurrentView] = useState<View>(View.Dashboard);
-  const [editingCharacterId, setEditingCharacterId] = useState<string | null>(null);
+  const { characters, currentView, editingCharacterId } = useCharacterStore();
+  const { setCurrentView, setEditingCharacterId } = useStoreActions();
 
   const handleCreateNew = useCallback(() => {
     setEditingCharacterId(null);
     setCurrentView(View.Editor);
-  }, []);
+  }, [setCurrentView, setEditingCharacterId]);
 
   const handleEditCharacter = useCallback((id: string) => {
     setEditingCharacterId(id);
     setCurrentView(View.Editor);
-  }, []);
+  }, [setCurrentView, setEditingCharacterId]);
 
   const handleBackToDashboard = useCallback(() => {
     setCurrentView(View.Dashboard);
     setEditingCharacterId(null);
-  }, []);
-
-  const handleSaveCharacter = useCallback((characterToSave: Character) => {
-    setCharacters(prev => {
-      const exists = prev.some(c => c.id === characterToSave.id);
-      if (exists) {
-        return prev.map(c => c.id === characterToSave.id ? characterToSave : c);
-      }
-      return [...prev, characterToSave].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    });
-    handleBackToDashboard();
-  }, [setCharacters, handleBackToDashboard]);
-
-  const handleDeleteCharacter = useCallback((id: string) => {
-    if (window.confirm("Are you sure you want to delete this character? This action cannot be undone.")) {
-        setCharacters(prev => prev.filter(c => c.id !== id));
-        handleBackToDashboard();
-    }
-  }, [setCharacters, handleBackToDashboard]);
+  }, [setCurrentView, setEditingCharacterId]);
 
   const editingCharacter = editingCharacterId ? characters.find(c => c.id === editingCharacterId) ?? null : null;
 
@@ -58,9 +39,7 @@ function App() {
         ) : (
           <CharacterForm
             initialCharacter={editingCharacter}
-            onSave={handleSaveCharacter}
             onBack={handleBackToDashboard}
-            onDelete={handleDeleteCharacter}
           />
         )}
       </main>

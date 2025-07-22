@@ -1,4 +1,6 @@
 
+export type Genre = 'High Fantasy' | 'Cyberpunk' | 'Post-Apocalyptic' | 'Slice of Life' | 'Mythic' | 'Historical Fiction';
+
 export interface Character {
   id: string;
   name: string;
@@ -12,6 +14,7 @@ export interface Character {
   portraitBase64: string | null;
   voiceSampleBase64: string | null;
   createdAt: string;
+  genre?: Genre;
 }
 
 export type PartialCharacter = Omit<Character, 'id' | 'createdAt'>;
