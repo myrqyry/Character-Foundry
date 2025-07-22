@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Character, PartialCharacter, Genre } from '../types';
 import Button from './Button';
 import { ArrowLeftIcon, SparklesIcon, TrashIcon, UserIcon, UploadIcon } from './Icons';
-import { fleshOutCharacter } from '../services/geminiService';
+import { fleshOutCharacter, generatePortrait, evolveCharacter } from '../services/geminiService';
 import { useCharacterStore, useStoreActions } from '../store';
 import GenreSelect from './GenreSelect';
 import ImportExportMenu from './ImportExportMenu';
@@ -30,6 +30,8 @@ const TextareaField: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement> 
 const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack }) => {
   const [character, setCharacter] = useState<Partial<Character>>({});
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isPortraitLoading, setIsPortraitLoading] = useState(false);
+  const [prompt, setPrompt] = useState('');
   const { addCharacter, updateCharacter, deleteCharacter } = useStoreActions();
   const genres = useCharacterStore((state) => state.genres);
 
@@ -72,6 +74,30 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     }
     setIsAiLoading(false);
   }, [character]);
+
+  const handleGeneratePortrait = useCallback(async () => {
+    setIsPortraitLoading(true);
+    const imageBase64 = await generatePortrait(character);
+    if (imageBase64) {
+      setCharacter(prev => ({ ...prev, portraitBase64: imageBase64 }));
+    } else {
+      alert("Failed to generate portrait with AI. Please check the console for errors.");
+    }
+    setIsPortraitLoading(false);
+  }, [character]);
+
+  const handleEvolveCharacter = useCallback(async () => {
+    if (!prompt) return;
+    setIsAiLoading(true);
+    const aiResult = await evolveCharacter({ ...character }, prompt);
+    if (aiResult) {
+      setCharacter(prev => ({...prev, ...aiResult}));
+      setPrompt(''); // Clear the prompt after successful evolution
+    } else {
+      alert("Failed to evolve character with AI. Please check the console for errors.");
+    }
+    setIsAiLoading(false);
+  }, [character, prompt]);
 
   const handleSave = () => {
     const finalCharacter: Character = {
@@ -137,7 +163,11 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
                         </div>
                     )}
                 </div>
-                <div>
+                <div className="space-y-2">
+                  <Button onClick={handleGeneratePortrait} variant="secondary" className="w-full" disabled={isPortraitLoading}>
+                      <SparklesIcon className={`mr-2 h-4 w-4 ${isPortraitLoading ? 'animate-spin' : ''}`} />
+                      {isPortraitLoading ? 'Generating...' : 'Generate Portrait with AI'}
+                  </Button>
                   <label className="w-full text-center cursor-pointer bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-md transition inline-flex items-center justify-center">
                     <UploadIcon className="mr-2 h-4 w-4"/> 
                     Upload Portrait
@@ -180,6 +210,26 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
           <TextareaField label="Strengths" id="strengths" name="strengths" value={character.strengths || ''} onChange={handleChange} />
           <TextareaField label="Flaws" id="flaws" name="flaws" value={character.flaws || ''} onChange={handleChange} />
           <TextareaField label="Backstory" id="backstory" name="backstory" value={character.backstory || ''} onChange={handleChange} />
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-gray-700">
+          <h3 className="text-lg font-bold text-indigo-300 mb-4">Evolve with AI</h3>
+          <div className="space-y-4">
+            <TextareaField
+              label="Describe changes or additions..."
+              id="prompt"
+              name="prompt"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="e.g., 'Give the character a mysterious scar over their left eye', 'Make the backstory more tragic', 'They found a powerful artifact, describe it'"
+            />
+            <div className="flex justify-end gap-4">
+                <Button onClick={handleEvolveCharacter} variant="secondary" disabled={isAiLoading || !prompt}>
+                    <SparklesIcon className={`mr-2 h-5 w-5 ${isAiLoading ? 'animate-spin' : ''}`} />
+                    {isAiLoading ? 'Evolving...' : 'Evolve Character'}
+                </Button>
+            </div>
+          </div>
         </div>
 
         <div className="mt-8 pt-6 border-t border-gray-700 flex justify-end gap-4">

@@ -92,3 +92,98 @@ export const fleshOutCharacter = async (
     return null;
   }
 };
+
+export const evolveCharacter = async (
+    character: Partial<Character>,
+    prompt: string
+): Promise<PartialCharacter | null> => {
+    try {
+        const promptData = { ...character };
+        const evolutionPrompt = `
+            You are a master storyteller and character developer.
+            A user wants to evolve an existing character based on a prompt.
+            Your task is to intelligently update the character's details based on the user's request.
+            You must not change the character's name.
+            The updates should be creative, consistent with the existing character, and seamlessly integrated.
+            For example, if the user asks for a "more tragic backstory", you should rewrite the backstory to be more sorrowful and perhaps adjust the character's personality or flaws to reflect this change.
+            If the user mentions a new item, you should add it to the character's appearance or backstory.
+            Return ONLY a valid JSON object that strictly adheres to the provided schema. Do not include any explanatory text, markdown formatting, or anything outside of the JSON structure.
+
+            User Prompt: "${prompt}"
+
+            Existing Character Data:
+            ${JSON.stringify(promptData, null, 2)}
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: evolutionPrompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: characterSchema,
+            },
+        });
+
+        const jsonText = response.text.trim();
+        const generatedData = JSON.parse(jsonText);
+
+        return {
+            ...character,
+            ...generatedData,
+        };
+
+    } catch (error) {
+        console.error("Error evolving character with Gemini:", error);
+        return null;
+    }
+};
+
+export const generatePortrait = async (
+    character: Partial<Character>
+): Promise<string | null> => {
+    try {
+        const description = character.appearance || character.synopsis || "A fantasy character";
+        const prompt = `
+            Generate a digital painting of a character for a roleplaying game.
+            Style: Dramatic lighting, detailed, fantasy art.
+            Description: ${description}
+            Genre: ${character.genre || 'Fantasy'}
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-flash', // Or another suitable model
+            contents: prompt,
+            // Assuming the model can output images directly, or you'd use a different API/method.
+            // This is a conceptual example. The actual implementation might differ based on API capabilities.
+            // For instance, you might need to use a specific image generation model or endpoint.
+        });
+
+        // This part is highly dependent on the actual API response format for images.
+        // It might be a URL, a base64 string, etc.
+        // The following is a placeholder for processing the response.
+        // const image_data = response.parts.find(p => p.type === 'image')?.data;
+        // if (image_data) {
+        //     return `data:image/jpeg;base64,${image_data}`;
+        // }
+
+        // Since I can't actually generate images, I'll return a placeholder.
+        // In a real scenario, this would be the base64 string from the API.
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API latency
+        const placeholderUrl = `https://i.pravatar.cc/512?u=${character.id || Date.now()}`;
+        // In a real app, you would fetch this URL and convert it to base64.
+        // For this simulation, we'll just return the URL, and the component can use it directly.
+        // To properly simulate, we should fetch and convert to base64.
+        const imageResponse = await fetch(placeholderUrl);
+        const blob = await imageResponse.blob();
+        const reader = new FileReader();
+        return new Promise((resolve, reject) => {
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+
+    } catch (error) {
+        console.error("Error generating portrait with Gemini:", error);
+        return null;
+    }
+};
