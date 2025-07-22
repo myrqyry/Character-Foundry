@@ -93,6 +93,29 @@ export const fleshOutCharacter = async (
   }
 };
 
+export const textToSpeech = async (text: string): Promise<string | null> => {
+    if (!text) return null;
+    try {
+        // This is a conceptual example. The actual implementation might differ
+        // based on the specific API used for Text-to-Speech.
+        // For this example, we'll simulate a call and return a pre-recorded audio sample.
+        console.log(`Generating TTS for: "${text.substring(0, 50)}..."`);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API latency
+
+        // In a real application, you would make an API call to a TTS service.
+        // The response would typically be audio data, which you would then encode in base64.
+        // For demonstration purposes, we will use a placeholder audio file.
+        // This is a base64 encoded silent audio clip.
+        const sampleAudioBase64 = "data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTG93IFJldmVueWUgLyBUYWSSBROlhg==";
+
+        return sampleAudioBase64;
+
+    } catch (error) {
+        console.error("Error generating speech with TTS service:", error);
+        return null;
+    }
+};
+
 export const evolveCharacter = async (
     character: Partial<Character>,
     prompt: string

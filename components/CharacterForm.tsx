@@ -20,18 +20,31 @@ const InputField: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label
   </div>
 );
 
-const TextareaField: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string }> = ({ label, id, ...props }) => (
-  <div>
+import PlayButton from './PlayButton';
+
+const TextareaField: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  label: string;
+  onPlay?: () => void;
+  isPlaying?: boolean;
+}> = ({ label, id, onPlay, isPlaying, ...props }) => (
+  <div className="relative">
     <label htmlFor={id} className="block text-sm font-medium text-indigo-300 mb-1">{label}</label>
     <textarea id={id} {...props} rows={5} className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
+    {onPlay && (
+      <PlayButton onClick={onPlay} isPlaying={!!isPlaying} />
+    )}
   </div>
 );
+
+import { textToSpeech } from '../services/geminiService';
 
 const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack }) => {
   const [character, setCharacter] = useState<Partial<Character>>({});
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isPortraitLoading, setIsPortraitLoading] = useState(false);
   const [prompt, setPrompt] = useState('');
+  const [nowPlaying, setNowPlaying] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { addCharacter, updateCharacter, deleteCharacter } = useCharacterStore((state) => state.actions);
   const genres = useCharacterStore((state) => state.genres);
 
@@ -98,6 +111,29 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     }
     setIsAiLoading(false);
   }, [character, prompt]);
+
+  const handlePlay = useCallback(async (text: string, fieldId: string) => {
+    if (nowPlaying === fieldId) {
+      audioRef.current?.pause();
+      setNowPlaying(null);
+      return;
+    }
+
+    setNowPlaying(fieldId);
+    const audioBase64 = await textToSpeech(text);
+    if (audioBase64) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      const audio = new Audio(audioBase64);
+      audioRef.current = audio;
+      audio.play();
+      audio.onended = () => setNowPlaying(null);
+    } else {
+      alert("Failed to generate audio. Please check the console for errors.");
+      setNowPlaying(null);
+    }
+  }, [nowPlaying]);
 
   const handleSave = () => {
     const finalCharacter: Character = {
@@ -199,17 +235,17 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
                     onChange={handleGenreChange}
                     genres={genres}
                 />
-                <TextareaField label="Synopsis" id="synopsis" name="synopsis" value={character.synopsis || ''} onChange={handleChange} />
+                <TextareaField label="Synopsis" id="synopsis" name="synopsis" value={character.synopsis || ''} onChange={handleChange} onPlay={() => handlePlay(character.synopsis || '', 'synopsis')} isPlaying={nowPlaying === 'synopsis'} />
             </div>
         </div>
 
         {/* Full-width fields */}
         <div className="mt-6 space-y-4">
-          <TextareaField label="Physical Appearance" id="appearance" name="appearance" value={character.appearance || ''} onChange={handleChange} />
-          <TextareaField label="Personality" id="personality" name="personality" value={character.personality || ''} onChange={handleChange} />
-          <TextareaField label="Strengths" id="strengths" name="strengths" value={character.strengths || ''} onChange={handleChange} />
-          <TextareaField label="Flaws" id="flaws" name="flaws" value={character.flaws || ''} onChange={handleChange} />
-          <TextareaField label="Backstory" id="backstory" name="backstory" value={character.backstory || ''} onChange={handleChange} />
+          <TextareaField label="Physical Appearance" id="appearance" name="appearance" value={character.appearance || ''} onChange={handleChange} onPlay={() => handlePlay(character.appearance || '', 'appearance')} isPlaying={nowPlaying === 'appearance'} />
+          <TextareaField label="Personality" id="personality" name="personality" value={character.personality || ''} onChange={handleChange} onPlay={() => handlePlay(character.personality || '', 'personality')} isPlaying={nowPlaying === 'personality'} />
+          <TextareaField label="Strengths" id="strengths" name="strengths" value={character.strengths || ''} onChange={handleChange} onPlay={() => handlePlay(character.strengths || '', 'strengths')} isPlaying={nowPlaying === 'strengths'} />
+          <TextareaField label="Flaws" id="flaws" name="flaws" value={character.flaws || ''} onChange={handleChange} onPlay={() => handlePlay(character.flaws || '', 'flaws')} isPlaying={nowPlaying === 'flaws'} />
+          <TextareaField label="Backstory" id="backstory" name="backstory" value={character.backstory || ''} onChange={handleChange} onPlay={() => handlePlay(character.backstory || '', 'backstory')} isPlaying={nowPlaying === 'backstory'} />
         </div>
 
         <div className="mt-8 pt-6 border-t border-gray-700">
