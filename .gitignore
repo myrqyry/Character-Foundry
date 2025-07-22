@@ -1,3 +1,15 @@
+# Environment variables
+.env
+.env.development
+.env.production
+.env.test
+.env.local
+
+# Next.js cache
+.next/cache/
+
+# Static export directory
+out/
 # Logs
 logs
 *.log
@@ -22,3 +34,21 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Next.js build output
+.next/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# dependencies
+/node_modules
+
+# IDE and OS files
+.DS_Store
+Thumbs.db
+
+# misc
+.eslintcache
+.env.production.local
+.next
