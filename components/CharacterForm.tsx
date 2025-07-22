@@ -4,7 +4,7 @@ import { Character, PartialCharacter, Genre } from '../types';
 import Button from './Button';
 import { ArrowLeftIcon, SparklesIcon, TrashIcon, UserIcon, UploadIcon } from './Icons';
 import { fleshOutCharacter, generatePortrait, evolveCharacter } from '../services/geminiService';
-import { useCharacterStore, useStoreActions } from '../store';
+import { useCharacterStore } from '../store';
 import GenreSelect from './GenreSelect';
 import ImportExportMenu from './ImportExportMenu';
 
@@ -32,7 +32,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isPortraitLoading, setIsPortraitLoading] = useState(false);
   const [prompt, setPrompt] = useState('');
-  const { addCharacter, updateCharacter, deleteCharacter } = useStoreActions();
+  const { addCharacter, updateCharacter, deleteCharacter } = useCharacterStore((state) => state.actions);
   const genres = useCharacterStore((state) => state.genres);
 
   useEffect(() => {

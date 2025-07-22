@@ -4,11 +4,11 @@ import { View } from './types';
 import Dashboard from './components/Dashboard';
 import CharacterForm from './components/CharacterForm';
 import { SparklesIcon } from './components/Icons';
-import { useCharacterStore, useStoreActions } from './store';
+import { useCharacterStore } from './store';
 
 function App() {
-  const { characters, currentView, editingCharacterId } = useCharacterStore();
-  const { setCurrentView, setEditingCharacterId } = useStoreActions();
+  const { characters, currentView, editingCharacterId, actions } = useCharacterStore();
+  const { setCurrentView, setEditingCharacterId } = actions;
 
   const handleCreateNew = useCallback(() => {
     setEditingCharacterId(null);

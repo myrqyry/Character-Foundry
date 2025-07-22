@@ -62,5 +62,3 @@ export const useCharacterStore = create<CharacterState>()(
     }
   )
 );
-
-export const useStoreActions = () => useCharacterStore((state) => state.actions);
