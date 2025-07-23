@@ -1,0 +1,73 @@
+{
+  "characterTraits": {
+    "physical": {
+      "title": "Physical Traits",
+      "description": "Define the physical appearance of your character.",
+      "fields": [
+        {"name": "height", "type": "text", "label": "Height"},
+        {"name": "weight", "type": "text", "label": "Weight"},
+        {"name": "hairColor", "type": "color", "label": "Hair Color"},
+        {"name": "eyeColor", "type": "color", "label": "Eye Color"},
+        {"name": "skinTone", "type": "text", "label": "Skin Tone"},
+        {"name": "build", "type": "select", "options": ["Slender", "Athletic", "Stocky", "Muscular", "Curvy"], "label": "Body Build"},
+        {"name": "scars", "type": "textarea", "label": "Scars & Markings"},
+        {"name": "tattoos", "type": "textarea", "label": "Tattoos & Piercings"},
+        {"name": "clothingStyle", "type": "text", "label": "Clothing Style"}
+      ]
+    },
+    "vocal": {
+      "title": "Vocal Traits",
+      "description": "Define the sound of your character's voice. Upload a short audio clip for Gemini to analyze.",
+      "fields": [
+        {"name": "audioSample", "type": "file", "label": "Vocal Sample (WAV, MP3)"},
+        {"name": "pitch", "type": "select", "options": ["Very High", "High", "Medium", "Low", "Very Low"], "label": "Pitch"},
+        {"name": "tone", "type": "text", "label": "Tone (e.g., Raspy, Smooth, Gravelly)"},
+        {"name": "accent", "type": "text", "label": "Accent"},
+        {"name": "speechPatterns", "type": "textarea", "label": "Speech Patterns (e.g., stutters, uses slang)"}
+      ],
+      "geminiNote": "Upload a short audio clip (a few seconds) of the desired voice. Gemini will analyze the audio to understand the vocal characteristics."
+    },
+    "personality": {
+      "title": "Personality Traits",
+      "description": "Define the core personality of your character.",
+      "fields": [
+        {"name": "alignment", "type": "select", "options": ["Lawful Good", "Neutral Good", "Chaotic Good", "Lawful Neutral", "True Neutral", "Chaotic Neutral", "Lawful Evil", "Neutral Evil", "Chaotic Evil"], "label": "Alignment"},
+        {"name": "virtues", "type": "tags", "label": "Virtues (e.g., Honest, Brave, Loyal)"},
+        {"name": "vices", "type": "tags", "label": "Vices (e.g., Greedy, Arrogant, Impulsive)"},
+        {"name": "quirks", "type": "textarea", "label": "Quirks & Habits"},
+        {"name": "fears", "type": "textarea", "label": "Fears & Phobias"}
+      ]
+    },
+    "background": {
+      "title": "Background & History",
+      "description": "Detail your character's past.",
+      "fields": [
+        {"name": "hometown", "type": "text", "label": "Hometown"},
+        {"name": "family", "type": "textarea", "label": "Family & Relationships"},
+        {"name": "education", "type": "textarea", "label": "Education & Occupation"},
+        {"name": "majorLifeEvents", "type": "textarea", "label": "Major Life Events"}
+      ]
+    },
+    "favorites": {
+      "title": "Favorites",
+      "description": "What does your character love?",
+      "fields": [
+        {"name": "favoriteFood", "type": "text", "label": "Favorite Food"},
+        {"name": "favoriteColor", "type": "color", "label": "Favorite Color"},
+        {"name": "favoriteMusic", "type": "text", "label": "Favorite Music Genre"},
+        {"name": "favoriteBook", "type": "text", "label": "Favorite Book/Movie"},
+        {"name": "hobby", "type": "text", "label": "Hobby"}
+      ]
+    },
+    "skills": {
+      "title": "Skills & Abilities",
+      "description": "What can your character do?",
+      "fields": [
+        {"name": "combatSkills", "type": "tags", "label": "Combat Skills"},
+        {"name": "magicAbilities", "type": "tags", "label": "Magic & Supernatural Abilities"},
+        {"name": "practicalSkills", "type": "tags", "label": "Practical Skills (e.g., Cooking, Lockpicking)"},
+        {"name": "languages", "type": "tags", "label": "Languages Spoken"}
+      ]
+    }
+  }
+}
