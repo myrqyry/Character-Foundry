@@ -2,14 +2,14 @@ import React, { useCallback, useRef } from 'react';
 import { Character } from '../types';
 import Button from './Button';
 import { DownloadIcon, UploadIcon } from './Icons';
-import { useStoreActions } from '../store';
+import { useCharacterStore } from '../store';
 
 interface ImportExportMenuProps {
   character: Partial<Character>;
 }
 
 const ImportExportMenu: React.FC<ImportExportMenuProps> = ({ character }) => {
-  const { importCharacters } = useStoreActions();
+  const importCharacters = useCharacterStore((state) => state.actions.importCharacters);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = useCallback(() => {
