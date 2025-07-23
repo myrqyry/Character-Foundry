@@ -4,11 +4,12 @@ import { View } from './types';
 import Dashboard from './components/Dashboard';
 import CharacterForm from './components/CharacterForm';
 import { SparklesIcon } from './components/Icons';
-import { useCharacterStore } from './store';
+import { useCharacterStore, useCharacterActions } from './store';
 
 function App() {
-  const { characters, currentView, editingCharacterId, actions } = useCharacterStore();
-  const { setCurrentView, setEditingCharacterId } = actions;
+  // Use separate hooks for state and actions
+  const { characters, currentView, editingCharacterId } = useCharacterStore();
+  const { setCurrentView, setEditingCharacterId } = useCharacterActions();
 
   const handleCreateNew = useCallback(() => {
     setEditingCharacterId(null);

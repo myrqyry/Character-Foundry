@@ -1,10 +1,11 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Character, PartialCharacter, Genre } from '../types';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Character, Genre, CharacterVersion } from '../types';
 import Button from './Button';
 import { ArrowLeftIcon, SparklesIcon, TrashIcon, UserIcon, UploadIcon } from './Icons';
 import { fleshOutCharacter, generatePortrait, evolveCharacter } from '../services/geminiService';
 import { useCharacterStore } from '../store';
+import VersionHistory from './VersionHistory';
 import GenreSelect from './GenreSelect';
 import ImportExportMenu from './ImportExportMenu';
 
@@ -45,8 +46,19 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const [prompt, setPrompt] = useState('');
   const [nowPlaying, setNowPlaying] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const { addCharacter, updateCharacter, deleteCharacter } = useCharacterStore((state) => state.actions);
+  const { 
+    addCharacter, 
+    updateCharacter, 
+    deleteCharacter
+  } = useCharacterStore();
   const genres = useCharacterStore((state) => state.genres);
+  
+  const handleRestoreVersion = (version: CharacterVersion) => {
+    if (window.confirm(`Are you sure you want to restore version ${version.version}? This will replace your current character data.`)) {
+      const { version: _, updatedAt, changes, ...characterData } = version as any;
+      setCharacter(characterData);
+    }
+  };
 
   useEffect(() => {
     setCharacter(initialCharacter || {});
@@ -136,26 +148,40 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   }, [nowPlaying]);
 
   const handleSave = () => {
-    const finalCharacter: Character = {
-      id: character.id || `char_${Date.now()}`,
-      createdAt: character.createdAt || new Date().toISOString(),
-      name: character.name || 'Untitled Character',
-      title: character.title || '',
-      synopsis: character.synopsis || '',
-      personality: character.personality || '',
-      flaws: character.flaws || '',
-      strengths: character.strengths || '',
-      appearance: character.appearance || '',
-      backstory: character.backstory || '',
-      portraitBase64: character.portraitBase64 || null,
-      voiceSampleBase64: character.voiceSampleBase64 || null,
-      genre: character.genre,
-    };
-
+    const now = new Date().toISOString();
+    
     if (initialCharacter) {
-      updateCharacter(finalCharacter);
+      // Update existing character
+      const updates: Partial<Character> = {
+        ...character,
+        updatedAt: now,
+      };
+      updateCharacter(initialCharacter.id, updates);
     } else {
-      addCharacter(finalCharacter);
+      // Create new character
+      const newCharacter: Omit<Character, 'id' | 'createdAt' | 'updatedAt' | 'currentVersion' | 'versions'> & {
+        createdAt: string;
+        updatedAt: string;
+        currentVersion: number;
+        versions: CharacterVersion[];
+      } = {
+        name: character.name || 'Untitled Character',
+        title: character.title || '',
+        synopsis: character.synopsis || '',
+        personality: character.personality || '',
+        flaws: character.flaws || '',
+        strengths: character.strengths || '',
+        appearance: character.appearance || '',
+        backstory: character.backstory || '',
+        portraitBase64: character.portraitBase64 || null,
+        voiceSampleBase64: character.voiceSampleBase64 || null,
+        genre: character.genre,
+        createdAt: now,
+        updatedAt: now,
+        currentVersion: 1,
+        versions: []
+      };
+      addCharacter(newCharacter);
     }
     onBack();
   };
@@ -186,7 +212,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
         </header>
 
       <div className="bg-gray-800 p-6 rounded-lg shadow-xl">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {/* Left Column: Portrait and Media */}
             <div className="md:col-span-1 space-y-4">
                 <div className="w-full aspect-square bg-gray-700 rounded-md flex items-center justify-center border-2 border-dashed border-gray-600">
@@ -236,6 +262,18 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
                     genres={genres}
                 />
                 <TextareaField label="Synopsis" id="synopsis" name="synopsis" value={character.synopsis || ''} onChange={handleChange} onPlay={() => handlePlay(character.synopsis || '', 'synopsis')} isPlaying={nowPlaying === 'synopsis'} />
+            </div>
+
+            {/* Version History Panel */}
+            <div className="md:col-span-1 space-y-4">
+              <h3 className="text-lg font-medium text-white">Version History</h3>
+              {initialCharacter && (
+                <VersionHistory 
+                  character={initialCharacter} 
+                  onRestore={handleRestoreVersion}
+                  currentVersion={initialCharacter.currentVersion || 1}
+                />
+              )}
             </div>
         </div>
 
