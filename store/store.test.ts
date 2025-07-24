@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCharacterStore } from './index';
-import { Character, CharacterVersion, Genre } from '../types';
+import { Character, Genre } from '../types';
 
 // Helper function to create a test character
 const createTestCharacter = (overrides: Partial<Character> = {}): Character => ({

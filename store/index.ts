@@ -241,18 +241,16 @@ export const useCharacterStore = create<StoreState>()(
 );
 
 // Create a hook that provides actions separately from state
-export const useCharacterActions = () => {
-  return useCharacterStore(
-    (state) => ({
-      addCharacter: state.addCharacter,
-      updateCharacter: state.updateCharacter,
-      deleteCharacter: state.deleteCharacter,
-      setCurrentView: state.setCurrentView,
-      setEditingCharacterId: state.setEditingCharacterId,
-      importCharacters: state.importCharacters,
-      getCharacterVersion: state.getCharacterVersion,
-      getCharacterVersions: state.getCharacterVersions,
-      restoreCharacterVersion: state.restoreCharacterVersion
-    })
-  );
-};
+export const useCharacterActions = () => useCharacterStore(
+  (state) => ({
+    addCharacter: state.addCharacter,
+    updateCharacter: state.updateCharacter,
+    deleteCharacter: state.deleteCharacter,
+    setCurrentView: state.setCurrentView,
+    setEditingCharacterId: state.setEditingCharacterId,
+    importCharacters: state.importCharacters,
+    getCharacterVersion: state.getCharacterVersion,
+    getCharacterVersions: state.getCharacterVersions,
+    restoreCharacterVersion: state.restoreCharacterVersion
+  })
+);

@@ -1,5 +1,4 @@
-
-import React, { useCallback } from 'react';
+import React from 'react';
 import { View } from './types';
 import Dashboard from './components/Dashboard';
 import CharacterForm from './components/CharacterForm';
@@ -11,20 +10,20 @@ function App() {
   const { characters, currentView, editingCharacterId } = useCharacterStore();
   const { setCurrentView, setEditingCharacterId } = useCharacterActions();
 
-  const handleCreateNew = useCallback(() => {
+  const handleCreateNew = () => {
     setEditingCharacterId(null);
     setCurrentView(View.Editor);
-  }, [setCurrentView, setEditingCharacterId]);
+  };
 
-  const handleEditCharacter = useCallback((id: string) => {
+  const handleEditCharacter = (id: string) => {
     setEditingCharacterId(id);
     setCurrentView(View.Editor);
-  }, [setCurrentView, setEditingCharacterId]);
+  };
 
-  const handleBackToDashboard = useCallback(() => {
+  const handleBackToDashboard = () => {
     setCurrentView(View.Dashboard);
     setEditingCharacterId(null);
-  }, [setCurrentView, setEditingCharacterId]);
+  };
 
   const editingCharacter = editingCharacterId ? characters.find(c => c.id === editingCharacterId) ?? null : null;
 
