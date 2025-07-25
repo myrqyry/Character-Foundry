@@ -44,7 +44,7 @@ type StoreState = {
   deleteCharacter: (id: string) => void;
   setCurrentView: (view: View) => void;
   setEditingCharacterId: (id: string | null) => void;
-  importCharacters: (newCharacters: Character[]) => void;
+  importCharacters: (newCharacters: Character | Character[]) => void;
   getCharacterVersion: (characterId: string, version: number) => CharacterVersion | null;
   getCharacterVersions: (characterId: string) => CharacterVersion[];
   restoreCharacterVersion: (characterId: string, version: number) => Character | null;
@@ -135,17 +135,16 @@ export const useCharacterStore = create<StoreState>()(
         set({ editingCharacterId: id });
       },
       
-      importCharacters: (newCharacters: Character[]) => {
-        set((state) => {
-          const existingIds = new Set(state.characters.map(c => c.id));
-          const uniqueNewCharacters = newCharacters.filter(c => !existingIds.has(c.id));
-          
-          return {
-            characters: [...state.characters, ...uniqueNewCharacters].sort(
-              (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-            )
-          };
-        });
+      importCharacters: (newCharacters: Character | Character[]) => {
+        const charactersArray = Array.isArray(newCharacters) ? newCharacters : [newCharacters];
+        set((state) => ({
+          characters: [
+            ...state.characters,
+            ...charactersArray.filter(
+              (newChar) => !state.characters.some((char) => char.id === newChar.id)
+            ),
+          ],
+        }));
       },
       
       getCharacterVersion: (characterId: string, version: number) => {

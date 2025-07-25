@@ -1,212 +1,380 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { PartialCharacter } from '../types';
+import * as path from 'node:path';
+import * as os from 'node:os';
+import * as fs from 'node:fs/promises';
+import { ttsSave } from 'edge-tts';
 
-import { GoogleGenAI, Type } from "@google/genai";
-import { Character, PartialCharacter } from '../types';
+// Type for TTS configuration
 
-const API_KEY = process.env.API_KEY;
+// Types for TTS configuration
+type TTSProvider = 'google' | 'edge';
 
-if (!API_KEY) {
-  // In a real app, you might show a more user-friendly error.
-  // For this context, we assume the key is always present.
-  console.error("Gemini API key not found in environment variables.");
+interface TTSConfig {
+  provider: TTSProvider;
+  google?: {
+    voice?: string;
+    languageCode?: string;
+    speakingRate?: number;
+    pitch?: number;
+  };
+  edge?: {
+    voice?: string;  // Can be any Voice.Name, Voice.ShortName, or Voice.FriendlyName
+    rate?: string;   // e.g. '+50%' for 50% faster, '-50%' for 50% slower
+    pitch?: string;  // e.g. '+50Hz' for higher pitch, '-50Hz' for lower pitch
+    volume?: string; // e.g. '+50%' for 50% louder, '-50%' for 50% quieter
+  };
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY! });
+interface VoiceConfig {
+  languageCode: string;
+  name: string;
+}
 
-const characterSchema = {
-    type: Type.OBJECT,
-    properties: {
-        name: { type: Type.STRING, description: "The character's full name. If provided, keep it, otherwise invent one." },
-        title: { type: Type.STRING, description: "A title or epithet for the character, like 'The Wanderer' or 'Archmage of the Crimson Circle'." },
-        synopsis: { type: Type.STRING, description: "A one-paragraph summary of the character's essence and primary conflict." },
-        personality: { type: Type.STRING, description: "A detailed description of the character's personality traits, mannerisms, and temperament." },
-        flaws: { type: Type.STRING, description: "Describe the character's significant weaknesses, fears, or vices." },
-        strengths: { type: Type.STRING, description: "Describe the character's key strengths, skills, or virtues." },
-        appearance: { type: Type.STRING, description: "A rich, detailed description of the character's physical appearance, including clothing and posture." },
-        backstory: { type: Type.STRING, description: "A compelling backstory outlining the character's history and motivations." },
-    },
-};
+interface AudioConfig {
+  audioEncoding: string;
+  speakingRate: number;
+  pitch: number;
+}
+
+
+
+// Model configurations
+const TEXT_MODEL = 'gemini-2.5-flash';
+const IMAGE_MODEL = 'gemini-pro-vision';
+
+// Initialize the Google Generative AI client if API key is available
+let genAI: GoogleGenerativeAI | null = null;
+let textModel: any = null;
+let imageModel: any = null;
+
+if (process.env.API_KEY) {
+  genAI = new GoogleGenerativeAI(process.env.API_KEY);
+  if (genAI) {
+    textModel = genAI.getGenerativeModel({ model: TEXT_MODEL });
+    imageModel = genAI.getGenerativeModel({ model: IMAGE_MODEL });
+  }
+}
+
+interface CharacterResponse {
+  data: PartialCharacter | null;
+  error: string | null;
+}
 
 export const fleshOutCharacter = async (
-  partialChar: Partial<Character>
-): Promise<PartialCharacter | null> => {
+  partialChar: PartialCharacter
+): Promise<CharacterResponse> => {
+  if (!textModel) {
+    return { data: null, error: 'Text model not initialized. API_KEY may be missing.' };
+  }
+
   try {
-    // Create a new object for the prompt, omitting large media fields to be efficient.
-    const promptData = {
-        name: partialChar.name,
-        title: partialChar.title,
-        synopsis: partialChar.synopsis,
-        personality: partialChar.personality,
-        flaws: partialChar.flaws,
-        strengths: partialChar.strengths,
-        appearance: partialChar.appearance,
-        backstory: partialChar.backstory,
-    };
-
-    const genrePrompt = partialChar.genre
-      ? `The user has specified a genre/tone: "${partialChar.genre}". Write as if this character lives in a world of that genre. For example, for "Cyberpunk", think gritty megacities and advanced technology. For "High Fantasy", think epic quests and magical creatures.`
-      : "The user has not specified a genre. You can assume a standard fantasy setting, but feel free to be creative.";
-
-    const prompt = `
-      You are a creative writer and world-building expert for roleplaying games.
-      A user has provided a partial character description. Your task is to flesh out the missing details or creatively enhance the existing ones.
-      ${genrePrompt}
-      Please generate a complete character profile based on the provided data.
-      If a field is empty, create a compelling entry for it. If a field has content, you can either use it as inspiration or subtly improve it.
-      Return ONLY a valid JSON object that strictly adheres to the provided schema. Do not include any explanatory text, markdown formatting, or anything outside of the JSON structure.
-
-      Partial Character Data:
-      ${JSON.stringify(promptData, null, 2)}
-    `;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: characterSchema,
-      },
-    });
+    const prompt = `Given the following partial character data, generate a complete character profile. Fill in any missing details to make the character rich and engaging. Return the character data as a JSON object. Do not include any markdown code block formatting.\n\nPartial Character Data: ${JSON.stringify(partialChar)}`;
     
-    const jsonText = response.text.trim();
-    const generatedData = JSON.parse(jsonText);
-
-    // Ensure all fields from the schema are present, even if empty strings.
-    // Merge generated text data with the original media data.
-    const fullCharacterData: PartialCharacter = {
-        name: generatedData.name || '',
-        title: generatedData.title || '',
-        synopsis: generatedData.synopsis || '',
-        personality: generatedData.personality || '',
-        flaws: generatedData.flaws || '',
-        strengths: generatedData.strengths || '',
-        appearance: generatedData.appearance || '',
-        backstory: generatedData.backstory || '',
-        portraitBase64: partialChar.portraitBase64 || null,
-        voiceSampleBase64: partialChar.voiceSampleBase64 || null,
-    };
-
-    return fullCharacterData;
-
+    const result = await textModel.generateContent(prompt);
+    const response = await result.response;
+    
+    if (!response.text) {
+      return { data: null, error: 'No response text from Gemini' };
+    }
+    
+    let text = response.text();
+    
+    // Attempt to extract JSON from markdown code block
+    const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/);
+    if (jsonMatch && jsonMatch[1]) {
+      text = jsonMatch[1];
+    }
+    
+    // Attempt to parse the response as JSON
+    try {
+      const fullCharacterData = JSON.parse(text) as PartialCharacter;
+      return { 
+        data: { 
+          ...fullCharacterData,
+          updatedAt: new Date().toISOString(),
+          currentVersion: 1,
+          versions: []
+        }, 
+        error: null 
+      };
+    } catch (parseError) {
+      console.error('Error parsing character data:', parseError);
+      console.error('Response text:', text);
+      return { data: null, error: 'Failed to parse character data' };
+    }
   } catch (error) {
-    console.error("Error generating character details with Gemini:", error);
-    return null;
+    console.error('Error generating character details with Gemini:', error);
+    return { data: null, error: 'Failed to generate character details' };
   }
 };
 
-export const textToSpeech = async (text: string): Promise<string | null> => {
-    if (!text) return null;
-    try {
-        // This is a conceptual example. The actual implementation might differ
-        // based on the specific API used for Text-to-Speech.
-        // For this example, we'll simulate a call and return a pre-recorded audio sample.
-        console.log(`Generating TTS for: "${text.substring(0, 50)}..."`);
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API latency
+interface TTSResponse {
+  data: string | null;
+  error: string | null;
+  provider: TTSProvider;
+}
 
-        // In a real application, you would make an API call to a TTS service.
-        // The response would typically be audio data, which you would then encode in base64.
-        // For demonstration purposes, we will use a placeholder audio file.
-        // This is a base64 encoded silent audio clip.
-        const sampleAudioBase64 = "data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTG93IFJldmVueWUgLyBUYWSSBROlhg==";
-
-        return sampleAudioBase64;
-
-    } catch (error) {
-        console.error("Error generating speech with TTS service:", error);
-        return null;
-    }
+/**
+ * Default TTS configuration
+ */
+const defaultTTSConfig: TTSConfig = {
+  provider: 'google',
+  google: {
+    voice: 'en-US-Neural2-J',
+    languageCode: 'en-US',
+    speakingRate: 1.0,
+    pitch: 0.0
+  },
+  edge: {
+    voice: 'en-US-GuyNeural',
+    rate: '+0%', // Use default rate (no change)
+    pitch: '+0Hz', // Default pitch (no change)
+    volume: '+0%', // Default volume (no change)
+  }
 };
+
+/**
+ * Convert text to speech using the specified provider
+ */
+export const textToSpeech = async (
+  text: string,
+  config: Partial<TTSConfig> = {}
+): Promise<TTSResponse> => {
+  if (!text) {
+    return { 
+      data: null, 
+      error: 'No text provided',
+      provider: config.provider || defaultTTSConfig.provider
+    };
+  }
+
+  // Merge provided config with defaults
+  const ttsConfig: TTSConfig = {
+    ...defaultTTSConfig,
+    ...config,
+    google: { ...defaultTTSConfig.google, ...(config.google || {}) },
+    edge: { ...defaultTTSConfig.edge, ...(config.edge || {}) }
+  };
+
+  try {
+    if (ttsConfig.provider === 'google') {
+      if (!genAI) {
+        return {
+          data: null,
+          error: 'Google TTS requires an API_KEY environment variable to be set',
+          provider: 'google'
+        };
+      }
+      return textToSpeechGoogle(text, ttsConfig);
+    } else if (ttsConfig.provider === 'edge') {
+      return textToSpeechEdge(text, ttsConfig);
+    } else {
+      throw new Error(`Unsupported TTS provider: ${ttsConfig.provider}`);
+    }
+  } catch (error) {
+    console.error(`Error with ${ttsConfig.provider} TTS service:`, error);
+    return { 
+      data: null, 
+      error: error instanceof Error ? error.message : 'Failed to generate speech',
+      provider: ttsConfig.provider
+    };
+  }
+};
+
+/**
+ * Convert text to speech using Google's TTS
+ */
+async function textToSpeechGoogle(
+  text: string
+): Promise<TTSResponse> {
+  if (!text) return { data: null, error: 'No text provided', provider: 'google' };
+  
+  try {
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+      return { data: null, error: 'Google TTS requires an API_KEY environment variable to be set', provider: 'google' };
+    }
+    
+    // Use the standard Google Cloud Text-to-Speech API
+    const ttsUrl = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
+    
+    const requestBody = {
+      input: {
+        text: text
+      },
+      voice: {
+        languageCode: 'en-US',  // Default language
+        name: 'en-US-Standard-J',  // Default voice
+        ssmlGender: 'NEUTRAL'  // Default gender
+      },
+      audioConfig: {
+        audioEncoding: 'MP3',  // Output audio format
+        speakingRate: 1.0,    // Normal speed
+        pitch: 0.0,          // Normal pitch
+        volumeGainDb: 0.0    // No volume gain
+      }
+    };
+
+    const response = await fetch(ttsUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Google TTS API error: ${response.status} ${errorText}`);
+    }
+
+    const responseData = await response.json();
+    const audioBase64 = responseData.audioContent;
+    
+    if (!audioBase64) {
+      throw new Error('No audio content in response from Google TTS');
+    }
+
+    return { 
+      data: `data:audio/mp3;base64,${audioBase64}`, 
+      error: null,
+      provider: 'google'
+    };
+  } catch (error) {
+    console.error('Error in Google TTS service:', error);
+    throw error; // Re-throw to be handled by the caller
+  }
+}
+
+/**
+ * Convert text to speech using edge-tts
+ */
+async function textToSpeechEdge(
+  text: string,
+  config: TTSConfig
+): Promise<TTSResponse> {
+  if (!text) return { data: null, error: 'No text provided', provider: 'edge' };
+  
+  try {
+    // Create a temporary file for the output
+    const tempDir = os.tmpdir();
+    const outputFile = path.join(tempDir, `tts-${Date.now()}.mp3`);
+
+    try {
+      // Use edge-tts to save the speech to a file
+      await ttsSave(text, outputFile, {
+        voice: config.edge?.voice || 'en-US-GuyNeural',
+        rate: config.edge?.rate || '+0%',
+        pitch: config.edge?.pitch || '+0Hz',
+        volume: config.edge?.volume || '+0%',
+      });
+
+      // Read the generated audio file
+      const audioBuffer = await fs.readFile(outputFile);
+      
+      // Convert to base64
+      const base64Audio = audioBuffer.toString('base64');
+      
+      // Return the audio data with the appropriate MIME type
+      return {
+        data: `data:audio/mp3;base64,${base64Audio}`,
+        error: null,
+        provider: 'edge'
+      };
+    } catch (error: any) {
+      console.error('Error in edge-tts service:', error);
+      return {
+        data: null,
+        error: `Edge TTS error: ${error.message}`,
+        provider: 'edge'
+      };
+    } finally {
+      // Clean up the temporary file
+      try {
+        await fs.unlink(outputFile).catch(() => {});
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+    }
+  } catch (error: any) {
+    console.error('Unexpected error in edge-tts service:', error);
+    return {
+      data: null,
+      error: `Unexpected error in edge-tts service: ${error.message}`,
+      provider: 'edge'
+    };
+  }
+}
 
 export const evolveCharacter = async (
-    character: Partial<Character>,
-    prompt: string
-): Promise<PartialCharacter | null> => {
-    try {
-        const promptData = { ...character };
-        const evolutionPrompt = `
-            You are a master storyteller and character developer.
-            A user wants to evolve an existing character based on a prompt.
-            Your task is to intelligently update the character's details based on the user's request.
-            You must not change the character's name.
-            The updates should be creative, consistent with the existing character, and seamlessly integrated.
-            For example, if the user asks for a "more tragic backstory", you should rewrite the backstory to be more sorrowful and perhaps adjust the character's personality or flaws to reflect this change.
-            If the user mentions a new item, you should add it to the character's appearance or backstory.
-            Return ONLY a valid JSON object that strictly adheres to the provided schema. Do not include any explanatory text, markdown formatting, or anything outside of the JSON structure.
-
-            User Prompt: "${prompt}"
-
-            Existing Character Data:
-            ${JSON.stringify(promptData, null, 2)}
-        `;
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: evolutionPrompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: characterSchema,
-            },
-        });
-
-        const jsonText = response.text.trim();
-        const generatedData = JSON.parse(jsonText);
-
-        return {
-            ...character,
-            ...generatedData,
-        };
-
-    } catch (error) {
-        console.error("Error evolving character with Gemini:", error);
-        return null;
+  character: PartialCharacter,
+  prompt: string
+): Promise<CharacterResponse> => {
+  try {
+    const evolutionPrompt = `Given the following character and the user's evolution prompt, generate an updated character profile.\n\nCurrent Character: ${JSON.stringify(character)}\n\nEvolution Prompt: ${prompt}`;
+    
+    const result = await textModel.generateContent(evolutionPrompt);
+    const response = await result.response;
+    
+    if (!response.text) {
+      return { data: null, error: 'No response text from Gemini' };
     }
+    
+    const text = response.text();
+    
+    try {
+      const updatedData = JSON.parse(text) as PartialCharacter;
+      return { data: updatedData, error: null };
+    } catch (parseError) {
+      console.error('Error parsing evolution data:', parseError);
+      return { data: null, error: 'Failed to parse evolution data' };
+    }
+  } catch (error) {
+    console.error('Error evolving character with Gemini:', error);
+    return { data: null, error: 'Failed to evolve character' };
+  }
 };
 
+interface ImageResponse {
+  data: string | null;
+  error: string | null;
+}
+
 export const generatePortrait = async (
-    character: Partial<Character>
-): Promise<string | null> => {
-    try {
-        const description = character.appearance || character.synopsis || "A fantasy character";
-        const prompt = `
-            Generate a digital painting of a character for a roleplaying game.
-            Style: Dramatic lighting, detailed, fantasy art.
-            Description: ${description}
-            Genre: ${character.genre || 'Fantasy'}
-        `;
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-flash', // Or another suitable model
-            contents: prompt,
-            // Assuming the model can output images directly, or you'd use a different API/method.
-            // This is a conceptual example. The actual implementation might differ based on API capabilities.
-            // For instance, you might need to use a specific image generation model or endpoint.
-        });
-
-        // This part is highly dependent on the actual API response format for images.
-        // It might be a URL, a base64 string, etc.
-        // The following is a placeholder for processing the response.
-        // const image_data = response.parts.find(p => p.type === 'image')?.data;
-        // if (image_data) {
-        //     return `data:image/jpeg;base64,${image_data}`;
-        // }
-
-        // Since I can't actually generate images, I'll return a placeholder.
-        // In a real scenario, this would be the base64 string from the API.
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API latency
-        const placeholderUrl = `https://i.pravatar.cc/512?u=${character.id || Date.now()}`;
-        // In a real app, you would fetch this URL and convert it to base64.
-        // For this simulation, we'll just return the URL, and the component can use it directly.
-        // To properly simulate, we should fetch and convert to base64.
-        const imageResponse = await fetch(placeholderUrl);
-        const blob = await imageResponse.blob();
-        const reader = new FileReader();
-        return new Promise((resolve, reject) => {
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
-
-    } catch (error) {
-        console.error("Error generating portrait with Gemini:", error);
-        return null;
+  character: PartialCharacter
+): Promise<ImageResponse> => {
+  try {
+    // Generate a portrait description for the character
+    const descriptionPrompt = `Generate a detailed visual description for a character portrait based on the following traits. Focus on visual details like appearance, clothing, and expression. Be concise but vivid.\n\n${JSON.stringify(character)}`;
+    
+    // Get a detailed description of the portrait
+    const descriptionResult = await textModel.generateContent(descriptionPrompt);
+    const descriptionResponse = await descriptionResult.response;
+    const description = descriptionResponse.text();
+    
+    // Generate the image using the description
+    const imagePrompt = `${description}\n\nGenerate a portrait image based on this description.`;
+    const imageResult = await imageModel.generateContent(imagePrompt);
+    const imageResponse = await imageResult.response;
+    
+    // Check if there is a candidate with content
+    if (!imageResponse.candidates || imageResponse.candidates.length === 0 || !imageResponse.candidates[0].content) {
+      return { data: null, error: 'No image candidate in response' };
     }
+    
+    // Extract the base64 string from the first part's inline data
+    const parts = imageResponse.candidates[0].content.parts;
+    if (!parts || parts.length === 0 || !parts[0].inlineData) {
+      return { data: null, error: 'No image data in response' };
+    }
+    
+    const imageBase64 = parts[0].inlineData.data;
+    const mimeType = parts[0].inlineData.mimeType || 'image/jpeg';
+    
+    return { data: `data:${mimeType};base64,${imageBase64}`, error: null };
+  } catch (error) {
+    console.error('Error generating portrait with Gemini:', error);
+    return { data: null, error: 'Failed to generate portrait' };
+  }
 };
