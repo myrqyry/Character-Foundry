@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Character, Genre, CharacterVersion } from '../types';
 import Button from './Button';
+import characterTraits from '../character_traits.json';
 import { ArrowLeftIcon, SparklesIcon, TrashIcon, UserIcon, UploadIcon } from './Icons';
 import { fleshOutCharacter, generatePortrait, evolveCharacter, generateVocalDescription } from '../services/geminiService';
 import { useCharacterStore } from '../store';
@@ -57,6 +58,56 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     if (window.confirm(`Are you sure you want to restore version ${version.version}? This will replace your current character data.`)) {
       const { version: _, updatedAt, changes, ...characterData } = version as any;
       setCharacter(characterData);
+    }
+  };
+
+  const renderField = (field: any) => {
+    const { name, type, label, options } = field;
+    const value = (character as any)[name] || '';
+
+    switch (type) {
+      case 'text':
+      case 'color':
+        return <InputField key={name} label={label} id={name} name={name} type={type} value={value} onChange={handleChange} />;
+      case 'textarea':
+        return <TextareaField key={name} label={label} id={name} name={name} value={value} onChange={handleChange} />;
+      case 'select':
+        return (
+          <div key={name}>
+            <label htmlFor={name} className="block text-sm font-medium text-indigo-300 mb-1">{label}</label>
+            <select
+              id={name}
+              name={name}
+              value={value}
+              onChange={handleChange}
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+            >
+              {options.map((option: string) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </div>
+        );
+      case 'tags':
+        // A simple implementation for tags using a text input
+        return <InputField key={name} label={`${label} (comma-separated)`} id={name} name={name} type="text" value={Array.isArray(value) ? value.join(', ') : value} onChange={handleChange} />;
+      case 'file':
+        return (
+          <div key={name}>
+            <label className="block text-sm font-medium text-indigo-300 mb-1">{label}</label>
+            <label className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-4 py-2 transition flex items-center">
+              <UploadIcon className="mr-2 h-5 w-5" />
+              Upload
+              <input
+                type="file"
+                className="hidden"
+                onChange={(e) => handleFileChange(e, 'audio')}
+              />
+            </label>
+          </div>
+        );
+      default:
+        return null;
     }
   };
 
@@ -320,36 +371,16 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
         </div>
 
         <div className="md:col-span-2 space-y-4">
-          <InputField label="Name" id="name" name="name" value={character.name || ''} onChange={handleChange} />
-          <InputField label="Title" id="title" name="title" value={character.title || ''} onChange={handleChange} />
-          <GenreSelect
-            value={character.genre}
-            onChange={handleGenreChange}
-            genres={genres}
-          />
-          <TextareaField label="Synopsis" id="synopsis" name="synopsis" value={character.synopsis || ''} onChange={handleChange} onPlay={() => handlePlay(character.synopsis || '', 'synopsis')} isPlaying={nowPlaying === 'synopsis'} />
+          {Object.entries(characterTraits.characterTraits).map(([sectionKey, section]) => (
+            <div key={sectionKey} className="bg-gray-700 rounded-lg p-4">
+              <h3 className="text-lg font-medium text-white mb-2">{section.title}</h3>
+              <p className="text-sm text-gray-400 mb-4">{section.description}</p>
+              <div className="space-y-4">
+                {section.fields.map(field => renderField(field))}
+              </div>
+            </div>
+          ))}
         </div>
-
-        <div className="md:col-span-1 space-y-4">
-          <h3 className="text-lg font-medium text-white">Version History</h3>
-          {initialCharacter && (
-            <VersionHistory 
-              character={initialCharacter} 
-              onRestore={handleRestoreVersion}
-              currentVersion={initialCharacter.currentVersion || 1}
-            />
-          )}
-        </div>
-      </div>
-
-      <div className="mt-6 space-y-4">
-        <TextareaField label="Physical Appearance" id="appearance" name="appearance" value={character.appearance || ''} onChange={handleChange} onPlay={() => handlePlay(character.appearance || '', 'appearance')} isPlaying={nowPlaying === 'appearance'} />
-        <TextareaField label="Personality" id="personality" name="personality" value={character.personality || ''} onChange={handleChange} onPlay={() => handlePlay(character.personality || '', 'personality')} isPlaying={nowPlaying === 'personality'} />
-        <TextareaField label="Strengths" id="strengths" name="strengths" value={character.strengths || ''} onChange={handleChange} onPlay={() => handlePlay(character.strengths || '', 'strengths')} isPlaying={nowPlaying === 'strengths'} />
-        <TextareaField label="Flaws" id="flaws" name="flaws" value={character.flaws || ''} onChange={handleChange} onPlay={() => handlePlay(character.flaws || '', 'flaws')} isPlaying={nowPlaying === 'flaws'} />
-        <TextareaField label="Backstory" id="backstory" name="backstory" value={character.backstory || ''} onChange={handleChange} onPlay={() => handlePlay(character.backstory || '', 'backstory')} isPlaying={nowPlaying === 'backstory'} />
-        <TextareaField label="Vocal Description" id="vocalDescription" name="vocalDescription" value={character.vocalDescription || ''} onChange={handleChange} onPlay={() => handlePlay(character.vocalDescription || '', 'vocalDescription')} isPlaying={nowPlaying === 'vocalDescription'} />
-      </div>
 
       <div className="mt-8 pt-6 border-t border-gray-700">
         <h3 className="text-lg font-bold text-indigo-300 mb-4">Evolve with AI</h3>
