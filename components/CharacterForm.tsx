@@ -8,13 +8,16 @@ import { useCharacterStore } from '../store';
 import VersionHistory from './VersionHistory';
 import GenreSelect from './GenreSelect';
 import ImportExportMenu from './ImportExportMenu';
+import PortraitManager from './PortraitManager';
+import VoiceManager from './VoiceManager';
+import CharacterFields from './CharacterFields';
 
 interface CharacterFormProps {
   initialCharacter: Character | null;
   onBack: () => void;
 }
 
-const InputField: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string }> = ({ label, id, ...props }) => (
+export const InputField: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string }> = ({ label, id, ...props }) => (
   <div>
     <label htmlFor={id} className="block text-sm font-medium text-indigo-300 mb-1">{label}</label>
     <input id={id} {...props} className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
@@ -23,7 +26,7 @@ const InputField: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label
 
 import PlayButton from './PlayButton'; // No-op change to trigger rebuild
 
-const TextareaField: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+export const TextareaField: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label: string;
   onPlay?: () => void;
   isPlaying?: boolean;
@@ -61,55 +64,6 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     }
   };
 
-  const renderField = (field: any) => {
-    const { name, type, label, options } = field;
-    const value = (character as any)[name] || '';
-
-    switch (type) {
-      case 'text':
-      case 'color':
-        return <InputField key={name} label={label} id={name} name={name} type={type} value={value} onChange={handleChange} />;
-      case 'textarea':
-        return <TextareaField key={name} label={label} id={name} name={name} value={value} onChange={handleChange} />;
-      case 'select':
-        return (
-          <div key={name}>
-            <label htmlFor={name} className="block text-sm font-medium text-indigo-300 mb-1">{label}</label>
-            <select
-              id={name}
-              name={name}
-              value={value}
-              onChange={handleChange}
-              className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-            >
-              {options.map((option: string) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
-            </select>
-          </div>
-        );
-      case 'tags':
-        // A simple implementation for tags using a text input
-        return <InputField key={name} label={`${label} (comma-separated)`} id={name} name={name} type="text" value={Array.isArray(value) ? value.join(', ') : value} onChange={handleChange} />;
-      case 'file':
-        return (
-          <div key={name}>
-            <label className="block text-sm font-medium text-indigo-300 mb-1">{label}</label>
-            <label className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-4 py-2 transition flex items-center">
-              <UploadIcon className="mr-2 h-5 w-5" />
-              Upload
-              <input
-                type="file"
-                className="hidden"
-                onChange={(e) => handleFileChange(e, 'audio')}
-              />
-            </label>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
 
   useEffect(() => {
     setCharacter(initialCharacter || {});
@@ -307,80 +261,26 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1">
-          <div className="bg-gray-700 rounded-lg p-4 flex flex-col items-center">
-            {character.portraitBase64 ? (
-              <img 
-                src={character.portraitBase64} 
-                alt="Character portrait" 
-                className="rounded-lg w-48 h-48 object-cover mb-4"
-              />
-            ) : (
-              <div className="bg-gray-600 border-2 border-dashed border-gray-400 rounded-lg w-48 h-48 flex items-center justify-center mb-4">
-                <UserIcon className="h-16 w-16 text-gray-400" />
-              </div>
-            )}
-            <div className="flex space-x-2">
-              <label className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-4 py-2 transition flex items-center">
-                <UploadIcon className="mr-2 h-5 w-5" />
-                Upload Image
-                <input 
-                  type="file" 
-                  className="hidden" 
-                  accept="image/*" 
-                  onChange={(e) => handleFileChange(e, 'image')} 
-                />
-              </label>
-              <Button 
-                onClick={handleGeneratePortrait} 
-                variant="secondary" 
-                disabled={isPortraitLoading}
-              >
-                <SparklesIcon className={`mr-2 h-5 w-5 ${isPortraitLoading ? 'animate-spin' : ''}`} />
-                {isPortraitLoading ? 'Generating...' : 'AI Generate'}
-              </Button>
-            </div>
-          </div>
+          <PortraitManager
+            portraitBase64={character.portraitBase64}
+            isPortraitLoading={isPortraitLoading}
+            handleFileChange={handleFileChange}
+            handleGeneratePortrait={handleGeneratePortrait}
+          />
 
-          {/* Audio Upload and Playback */}
-          <div className="bg-gray-700 rounded-lg p-4 mt-6">
-            <h3 className="text-lg font-medium text-white mb-2">Voice Sample</h3>
-            {character.voiceSampleBase64 && (
-              <audio controls src={character.voiceSampleBase64} className="w-full mb-4" />
-            )}
-            <div className="flex space-x-2">
-              <label className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-4 py-2 transition flex items-center">
-                <UploadIcon className="mr-2 h-5 w-5" />
-                Upload Audio
-                <input 
-                  type="file" 
-                  className="hidden" 
-                  accept="audio/*" 
-                  onChange={(e) => handleFileChange(e, 'audio')} 
-                />
-              </label>
-              <Button 
-                onClick={handleGenerateVocalDescription} 
-                variant="secondary" 
-                disabled={isAiLoading || !character.voiceSampleBase64}
-              >
-                <SparklesIcon className={`mr-2 h-5 w-5 ${isAiLoading ? 'animate-spin' : ''}`} />
-                {isAiLoading ? 'Analyzing...' : 'AI Analyze Voice'}
-              </Button>
-            </div>
-          </div>
+          <VoiceManager
+            voiceSampleBase64={character.voiceSampleBase64}
+            isAiLoading={isAiLoading}
+            handleFileChange={handleFileChange}
+            handleGenerateVocalDescription={handleGenerateVocalDescription}
+          />
         </div>
 
-        <div className="md:col-span-2 space-y-4">
-          {Object.entries(characterTraits.characterTraits).map(([sectionKey, section]) => (
-            <div key={sectionKey} className="bg-gray-700 rounded-lg p-4">
-              <h3 className="text-lg font-medium text-white mb-2">{section.title}</h3>
-              <p className="text-sm text-gray-400 mb-4">{section.description}</p>
-              <div className="space-y-4">
-                {section.fields.map(field => renderField(field))}
-              </div>
-            </div>
-          ))}
-        </div>
+        <CharacterFields
+          character={character}
+          handleChange={handleChange}
+          handleFileChange={handleFileChange}
+        />
 
       <div className="mt-8 pt-6 border-t border-gray-700">
         <h3 className="text-lg font-bold text-indigo-300 mb-4">Evolve with AI</h3>
