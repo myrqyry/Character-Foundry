@@ -37,6 +37,11 @@ type StoreState = {
   currentView: View;
   editingCharacterId: string | null;
   genres: Genre[];
+  ttsProvider: 'google' | 'edge';
+  googleTtsVoice: string;
+  edgeTtsVoice: string;
+  textModel: string;
+  imageModel: string;
   
   // Actions
   addCharacter: (characterData: Omit<Character, 'id' | 'createdAt' | 'updatedAt' | 'currentVersion' | 'versions'>) => Character;
@@ -48,6 +53,11 @@ type StoreState = {
   getCharacterVersion: (characterId: string, version: number) => CharacterVersion | null;
   getCharacterVersions: (characterId: string) => CharacterVersion[];
   restoreCharacterVersion: (characterId: string, version: number) => Character | null;
+  setTtsProvider: (provider: 'google' | 'edge') => void;
+  setGoogleTtsVoice: (voice: string) => void;
+  setEdgeTtsVoice: (voice: string) => void;
+  setTextModel: (model: string) => void;
+  setImageModel: (model: string) => void;
 }
 
 // Create the store with separate state and actions
@@ -59,6 +69,11 @@ export const useCharacterStore = create<StoreState>()(
       currentView: View.Dashboard,
       editingCharacterId: null,
       genres: ['High Fantasy', 'Cyberpunk', 'Post-Apocalyptic', 'Slice of Life', 'Mythic', 'Historical Fiction'],
+      ttsProvider: 'google', // Default TTS provider
+      googleTtsVoice: 'gemini-2.5-flash-preview-tts', // Default Google TTS voice
+      edgeTtsVoice: 'en-US-GuyNeural', // Default Edge TTS voice
+      textModel: 'gemini-2.5-flash', // Default text model
+      imageModel: 'gemini-2.0-flash-preview-image-generation', // Default image model
       
       // Actions
       addCharacter: (characterData) => {
@@ -224,7 +239,13 @@ export const useCharacterStore = create<StoreState>()(
         }));
         
         return restoredCharacter;
-      }
+      },
+
+      setTtsProvider: (provider: 'google' | 'edge') => set({ ttsProvider: provider }),
+      setGoogleTtsVoice: (voice: string) => set({ googleTtsVoice: voice }),
+      setEdgeTtsVoice: (voice: string) => set({ edgeTtsVoice: voice }),
+      setTextModel: (model: string) => set({ textModel: model }),
+      setImageModel: (model: string) => set({ imageModel: model }),
     }),
     {
       name: 'character-storage',
@@ -233,7 +254,12 @@ export const useCharacterStore = create<StoreState>()(
         characters: state.characters,
         genres: state.genres,
         currentView: state.currentView,
-        editingCharacterId: state.editingCharacterId
+        editingCharacterId: state.editingCharacterId,
+        ttsProvider: state.ttsProvider,
+        googleTtsVoice: state.googleTtsVoice,
+        edgeTtsVoice: state.edgeTtsVoice,
+        textModel: state.textModel,
+        imageModel: state.imageModel,
       })
     }
   )
@@ -250,6 +276,11 @@ export const useCharacterActions = () => useCharacterStore(
     importCharacters: state.importCharacters,
     getCharacterVersion: state.getCharacterVersion,
     getCharacterVersions: state.getCharacterVersions,
-    restoreCharacterVersion: state.restoreCharacterVersion
+    restoreCharacterVersion: state.restoreCharacterVersion,
+    setTtsProvider: state.setTtsProvider,
+    setGoogleTtsVoice: state.setGoogleTtsVoice,
+    setEdgeTtsVoice: state.setEdgeTtsVoice,
+    setTextModel: state.setTextModel,
+    setImageModel: state.setImageModel,
   })
 );

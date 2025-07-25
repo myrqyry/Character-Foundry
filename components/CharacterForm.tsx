@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Character, Genre, CharacterVersion } from '../types';
 import Button from './Button';
 import { ArrowLeftIcon, SparklesIcon, TrashIcon, UserIcon, UploadIcon } from './Icons';
-import { fleshOutCharacter, generatePortrait, evolveCharacter } from '../services/geminiService';
+import { fleshOutCharacter, generatePortrait, evolveCharacter, generateVocalDescription } from '../services/geminiService';
 import { useCharacterStore } from '../store';
 import VersionHistory from './VersionHistory';
 import GenreSelect from './GenreSelect';
@@ -20,7 +20,7 @@ const InputField: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label
   </div>
 );
 
-import PlayButton from './PlayButton';
+import PlayButton from './PlayButton'; // No-op change to trigger rebuild
 
 const TextareaField: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label: string;
@@ -45,6 +45,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const [prompt, setPrompt] = useState('');
   const [nowPlaying, setNowPlaying] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [showAudioModal, setShowAudioModal] = useState(false);
   const { 
     addCharacter, 
     updateCharacter, 
@@ -75,18 +76,36 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'image' | 'audio') => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        if (fileType === 'image') {
+      if (fileType === 'image') {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64String = reader.result as string;
           setCharacter(prev => ({ ...prev, portraitBase64: base64String }));
-        } else {
-          setCharacter(prev => ({ ...prev, voiceSampleBase64: base64String }));
-        }
-      };
-      reader.readAsDataURL(file);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // For audio, open the modal to allow clipping
+        setShowAudioModal(true);
+        // Store the file temporarily to pass to the iframe
+        // This is a simplified approach; a more robust solution might use context or a global store
+        (window as any).currentAudioFile = file; 
+      }
     }
   };
+
+  useEffect(() => {
+    const handleAudioClipped = (event: Event) => {
+      const customEvent = event as CustomEvent<string>;
+      setCharacter(prev => ({ ...prev, voiceSampleBase64: customEvent.detail }));
+      setShowAudioModal(false);
+    };
+
+    window.addEventListener('audioClipped', handleAudioClipped);
+
+    return () => {
+      window.removeEventListener('audioClipped', handleAudioClipped);
+    };
+  }, []);
 
   const handleFleshOut = useCallback(async () => {
     setIsAiLoading(true);
@@ -113,6 +132,22 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     }
     setIsPortraitLoading(false);
   }, [character]);
+
+  const handleGenerateVocalDescription = useCallback(async () => {
+    if (!character.voiceSampleBase64) {
+      alert("Please upload a voice sample first.");
+      return;
+    }
+    setIsAiLoading(true);
+    const { data, error } = await generateVocalDescription(character.voiceSampleBase64);
+    if (data) {
+      setCharacter(prev => ({ ...prev, vocalDescription: data }));
+    } else if (error) {
+      console.error(error);
+      alert(`Vocal description generation failed: ${error}`);
+    }
+    setIsAiLoading(false);
+  }, [character.voiceSampleBase64, generateVocalDescription]);
 
   const handleEvolveCharacter = useCallback(async () => {
     if (!prompt.trim()) return;
@@ -254,6 +289,34 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
               </Button>
             </div>
           </div>
+
+          {/* Audio Upload and Playback */}
+          <div className="bg-gray-700 rounded-lg p-4 mt-6">
+            <h3 className="text-lg font-medium text-white mb-2">Voice Sample</h3>
+            {character.voiceSampleBase64 && (
+              <audio controls src={character.voiceSampleBase64} className="w-full mb-4" />
+            )}
+            <div className="flex space-x-2">
+              <label className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-4 py-2 transition flex items-center">
+                <UploadIcon className="mr-2 h-5 w-5" />
+                Upload Audio
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  accept="audio/*" 
+                  onChange={(e) => handleFileChange(e, 'audio')} 
+                />
+              </label>
+              <Button 
+                onClick={handleGenerateVocalDescription} 
+                variant="secondary" 
+                disabled={isAiLoading || !character.voiceSampleBase64}
+              >
+                <SparklesIcon className={`mr-2 h-5 w-5 ${isAiLoading ? 'animate-spin' : ''}`} />
+                {isAiLoading ? 'Analyzing...' : 'AI Analyze Voice'}
+              </Button>
+            </div>
+          </div>
         </div>
 
         <div className="md:col-span-2 space-y-4">
@@ -285,6 +348,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
         <TextareaField label="Strengths" id="strengths" name="strengths" value={character.strengths || ''} onChange={handleChange} onPlay={() => handlePlay(character.strengths || '', 'strengths')} isPlaying={nowPlaying === 'strengths'} />
         <TextareaField label="Flaws" id="flaws" name="flaws" value={character.flaws || ''} onChange={handleChange} onPlay={() => handlePlay(character.flaws || '', 'flaws')} isPlaying={nowPlaying === 'flaws'} />
         <TextareaField label="Backstory" id="backstory" name="backstory" value={character.backstory || ''} onChange={handleChange} onPlay={() => handlePlay(character.backstory || '', 'backstory')} isPlaying={nowPlaying === 'backstory'} />
+        <TextareaField label="Vocal Description" id="vocalDescription" name="vocalDescription" value={character.vocalDescription || ''} onChange={handleChange} onPlay={() => handlePlay(character.vocalDescription || '', 'vocalDescription')} isPlaying={nowPlaying === 'vocalDescription'} />
       </div>
 
       <div className="mt-8 pt-6 border-t border-gray-700">
@@ -316,6 +380,25 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
           Save Character
         </Button>
       </div>
+
+      {showAudioModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-4 rounded-lg w-11/12 max-w-3xl h-3/4">
+            <iframe 
+              src="/audio_modal.html" 
+              className="w-full h-full border-none"
+              onLoad={(e) => {
+                // Pass the file to the iframe once it's loaded
+                const iframe = e.target as HTMLIFrameElement;
+                const fileInput = document.getElementById('audio-upload') as HTMLInputElement;
+                if (iframe.contentWindow && fileInput && fileInput.files && fileInput.files[0]) {
+                  iframe.contentWindow.postMessage({ type: 'audioFile', file: fileInput.files[0] }, '*');
+                }
+              }}
+            ></iframe>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

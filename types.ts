@@ -12,6 +12,7 @@ export interface CharacterVersion {
   backstory: string;
   portraitBase64: string | null;
   voiceSampleBase64: string | null;
+  vocalDescription: string | null;
   genre?: Genre;
   version: number;
   updatedAt: string;
