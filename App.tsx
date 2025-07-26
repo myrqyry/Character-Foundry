@@ -5,6 +5,7 @@ import CharacterForm from './components/CharacterForm';
 import { SparklesIcon, SettingsIcon } from './components/Icons';
 import { useCharacterStore, useCharacterActions } from './store';
 import GenerationOptionsModal from './components/GenerationOptionsModal';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   // Use separate hooks for state and actions
@@ -31,6 +32,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
+      <Toaster position="top-center" reverseOrder={false} />
       <header className="flex justify-between items-center p-4 bg-gray-800 shadow-md">
         <h1 className="text-3xl font-bold text-indigo-400">The Character Foundry</h1>
         <button 

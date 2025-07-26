@@ -3,13 +3,19 @@ import { InputField, TextareaField } from './CharacterForm'; // Assuming InputFi
 import { UploadIcon } from './Icons';
 import characterTraits from '../character_traits.json';
 
+import GenreSelect from './GenreSelect';
+import { Genre } from '../types';
+import TagsInput from './TagsInput';
+
 interface CharacterFieldsProps {
   character: any;
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>, fileType: 'image' | 'audio') => void;
+  handleGenreChange: (genre: Genre) => void;
+  genres: Genre[];
 }
 
-const CharacterFields: React.FC<CharacterFieldsProps> = ({ character, handleChange, handleFileChange }) => {
+const CharacterFields: React.FC<CharacterFieldsProps> = ({ character, handleChange, handleFileChange, handleGenreChange, genres }) => {
   const renderField = (field: any) => {
     const { name, type, label, options } = field;
     const value = character[name] || '';
@@ -20,6 +26,8 @@ const CharacterFields: React.FC<CharacterFieldsProps> = ({ character, handleChan
         return <InputField key={name} label={label} id={name} name={name} type={type} value={value} onChange={handleChange} />;
       case 'textarea':
         return <TextareaField key={name} label={label} id={name} name={name} value={value} onChange={handleChange} />;
+      case 'genre':
+        return <GenreSelect key={name} value={character.genre} onChange={handleGenreChange} genres={genres} />;
       case 'select':
         return (
           <div key={name}>
@@ -38,7 +46,7 @@ const CharacterFields: React.FC<CharacterFieldsProps> = ({ character, handleChan
           </div>
         );
       case 'tags':
-        return <InputField key={name} label={`${label} (comma-separated)`} id={name} name={name} type="text" value={Array.isArray(value) ? value.join(', ') : value} onChange={handleChange} />;
+        return <TagsInput key={name} label={label} name={name} value={Array.isArray(value) ? value : (value ? value.split(',').map((s: string) => s.trim()) : [])} onChange={(name, value) => handleChange({ target: { name, value } } as any)} />;
       case 'file':
         return (
           <div key={name}>

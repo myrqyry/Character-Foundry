@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { Character, Genre, CharacterVersion } from '../types';
 import Button from './Button';
 import characterTraits from '../character_traits.json';
@@ -117,9 +118,10 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     const { data, error } = await fleshOutCharacter({ ...character });
     if (data) {
       setCharacter(prev => ({...prev, ...data}));
+      toast.success("AI flesh out complete!");
     } else if (error) {
       console.error(error);
-      alert(`AI generation failed: ${error}`);
+      toast.error(`AI generation failed: ${error}`);
     }
     setIsAiLoading(false);
   }, [character]);
@@ -131,25 +133,27 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     const { data, error } = await generatePortrait({ ...character });
     if (data) {
       setCharacter(prev => ({ ...prev, portraitBase64: data }));
+      toast.success("Portrait generated!");
     } else if (error) {
       console.error(error);
-      alert(`Portrait generation failed: ${error}`);
+      toast.error(`Portrait generation failed: ${error}`);
     }
     setIsPortraitLoading(false);
   }, [character]);
 
   const handleGenerateVocalDescription = useCallback(async () => {
     if (!character.voiceSampleBase64) {
-      alert("Please upload a voice sample first.");
+      toast.error("Please upload a voice sample first.");
       return;
     }
     setIsAiLoading(true);
     const { data, error } = await generateVocalDescription(character.voiceSampleBase64);
     if (data) {
       setCharacter(prev => ({ ...prev, vocalDescription: data }));
+      toast.success("Vocal description generated!");
     } else if (error) {
       console.error(error);
-      alert(`Vocal description generation failed: ${error}`);
+      toast.error(`Vocal description generation failed: ${error}`);
     }
     setIsAiLoading(false);
   }, [character.voiceSampleBase64, generateVocalDescription]);
@@ -162,9 +166,10 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     if (data) {
       setCharacter(prev => ({ ...prev, ...data }));
       setPrompt('');
+      toast.success("Character evolved!");
     } else if (error) {
       console.error(error);
-      alert(`Character evolution failed: ${error}`);
+      toast.error(`Character evolution failed: ${error}`);
     }
     setIsAiLoading(false);
   }, [character, prompt]);
@@ -203,7 +208,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
 
   const handleSave = () => {
     if (!character.name) {
-      alert("Please provide at least a name for the character.");
+      toast.error("Please provide at least a name for the character.");
       return;
     }
     
@@ -280,6 +285,8 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
           character={character}
           handleChange={handleChange}
           handleFileChange={handleFileChange}
+          handleGenreChange={handleGenreChange}
+          genres={genres}
         />
 
       <div className="mt-8 pt-6 border-t border-gray-700">

@@ -1,5 +1,15 @@
 {
   "characterTraits": {
+    "core": {
+      "title": "Core Information",
+      "description": "The essential details about your character.",
+      "fields": [
+        {"name": "name", "type": "text", "label": "Name"},
+        {"name": "title", "type": "text", "label": "Title"},
+        {"name": "genre", "type": "genre", "label": "Genre"},
+        {"name": "synopsis", "type": "textarea", "label": "Synopsis"}
+      ]
+    },
     "physical": {
       "title": "Physical Traits",
       "description": "Define the physical appearance of your character.",
