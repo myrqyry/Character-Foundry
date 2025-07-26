@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View } from './types';
 import Dashboard from './components/Dashboard';
 import CharacterForm from './components/CharacterForm';

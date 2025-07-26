@@ -148,7 +148,7 @@ const GenerationOptionsModal: React.FC<GenerationOptionsModalProps> = ({
     }
     acc[voice.language].push(voice);
     return acc;
-  }, {} as Record<string, typeof googleVoces>);
+  }, {} as Record<string, typeof googleVoices>);
 
   if (!isOpen) return null;
 

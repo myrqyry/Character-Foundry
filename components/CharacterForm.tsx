@@ -1,13 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { Character, Genre, CharacterVersion } from '../types';
+import { Character, CharacterVersion, Genre } from '../types';
 import Button from './Button';
-import characterTraits from '../character_traits.json';
-import { ArrowLeftIcon, SparklesIcon, TrashIcon, UserIcon, UploadIcon } from './Icons';
+import { ArrowLeftIcon, SparklesIcon, TrashIcon } from './Icons';
 import { fleshOutCharacter, generatePortrait, evolveCharacter, generateVocalDescription } from '../services/geminiService';
 import { useCharacterStore } from '../store';
-import VersionHistory from './VersionHistory';
-import GenreSelect from './GenreSelect';
 import ImportExportMenu from './ImportExportMenu';
 import PortraitManager from './PortraitManager';
 import VoiceManager from './VoiceManager';
@@ -41,15 +38,14 @@ export const TextareaField: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaEl
   </div>
 );
 
-import { textToSpeech } from '../services/geminiService';
-
 const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack }) => {
+  // Destructure props with defaults to avoid undefined errors
+  const safeInitialCharacter = initialCharacter || {};
   const [character, setCharacter] = useState<Partial<Character>>({});
+  const [isSaving, setIsSaving] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isPortraitLoading, setIsPortraitLoading] = useState(false);
   const [prompt, setPrompt] = useState('');
-  const [nowPlaying, setNowPlaying] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showAudioModal, setShowAudioModal] = useState(false);
   const { 
     addCharacter, 
@@ -57,22 +53,23 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     deleteCharacter
   } = useCharacterStore();
   const genres = useCharacterStore((state) => state.genres);
-  
-  const handleRestoreVersion = (version: CharacterVersion) => {
-    if (window.confirm(`Are you sure you want to restore version ${version.version}? This will replace your current character data.`)) {
-      const { version: _, updatedAt, changes, ...characterData } = version as any;
-      setCharacter(characterData);
-    }
-  };
-
 
   useEffect(() => {
-    setCharacter(initialCharacter || {});
-  }, [initialCharacter]);
+    setCharacter(safeInitialCharacter);
+  }, [safeInitialCharacter]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  useEffect(() => {
+    return () => {
+      // Cleanup code if needed
+    };
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setCharacter(prev => ({ ...prev, [name]: value }));
+    setCharacter(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleGenreChange = (genre: Genre) => {
@@ -156,89 +153,111 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
       toast.error(`Vocal description generation failed: ${error}`);
     }
     setIsAiLoading(false);
-  }, [character.voiceSampleBase64, generateVocalDescription]);
+  }, [character.voiceSampleBase64]);
 
-  const handleEvolveCharacter = useCallback(async () => {
-    if (!prompt.trim()) return;
-    
-    setIsAiLoading(true);
-    const { data, error } = await evolveCharacter({ ...character }, prompt);
-    if (data) {
-      setCharacter(prev => ({ ...prev, ...data }));
-      setPrompt('');
-      toast.success("Character evolved!");
-    } else if (error) {
-      console.error(error);
-      toast.error(`Character evolution failed: ${error}`);
-    }
-    setIsAiLoading(false);
-  }, [character, prompt]);
-
-  const handlePlay = useCallback(async (text: string, fieldName: string) => {
-    if (!text) return;
-    
-    if (nowPlaying === fieldName) {
-      // Stop playing
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      setNowPlaying(null);
+  const handleEvolveCharacter = async () => {
+    if (!prompt.trim()) {
+      toast.error('Please enter a prompt');
       return;
     }
-    
-    setNowPlaying(fieldName);
-    
+
     try {
-      const { data: audioBase64, error } = await textToSpeech(text);
-      if (audioBase64) {
-        const audio = new Audio(audioBase64);
-        audioRef.current = audio;
-        audio.onended = () => setNowPlaying(null);
-        audio.play();
-      } else if (error) {
-        console.error(error);
-        setNowPlaying(null);
+      setIsAiLoading(true);
+      const result = await evolveCharacter(character as Character, prompt);
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      if (result.data) {
+        setCharacter(prev => ({
+          ...prev,
+          ...result.data,
+          name: result.data?.name || prev.name, // Ensure name is never undefined
+        }));
+        setPrompt('');
+        toast.success('Character evolved with AI!');
       }
     } catch (error) {
-      console.error("Error playing text:", error);
-      setNowPlaying(null);
+      console.error('Error evolving character:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to evolve character');
+    } finally {
+      setIsAiLoading(false);
     }
-  }, [nowPlaying]);
+  };
 
-  const handleSave = () => {
-    if (!character.name) {
-      toast.error("Please provide at least a name for the character.");
+  const createCharacterVersion = useCallback((char: Partial<Character>): CharacterVersion => ({
+    name: char.name || '',
+    title: char.title || '',
+    synopsis: char.synopsis || '',
+    personality: char.personality || '',
+    flaws: char.flaws || '',
+    strengths: char.strengths || '',
+    appearance: char.appearance || '',
+    backstory: char.backstory || '',
+    portraitBase64: char.portraitBase64 || null,
+    voiceSampleBase64: char.voiceSampleBase64 || null,
+    vocalDescription: char.versions?.[0]?.vocalDescription || null,
+    version: char.currentVersion || 1,
+    updatedAt: char.updatedAt || new Date().toISOString(),
+    changes: ['Initial version']
+  }), []);
+
+  const handleSave = useCallback(async () => {
+    if (!character.name?.trim()) {
+      toast.error('Character name is required');
       return;
     }
-    
-    const characterToSave: Character = {
-      ...character,
-      id: character.id || Date.now().toString(),
-      name: character.name, // Ensure name is present
-      createdAt: character.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      currentVersion: character.currentVersion ? character.currentVersion + 1 : 1,
-      versions: character.versions || [],
-    } as Character; // Cast to Character to satisfy TypeScript
-    
-    if (initialCharacter) {
-      updateCharacter(characterToSave);
-    } else {
-      addCharacter(characterToSave);
-    }
-    
-    onBack();
-  };
 
-  const handleDelete = () => {
-    if (window.confirm("Are you sure you want to delete this character?")) {
-      if (initialCharacter) {
-        deleteCharacter(initialCharacter.id);
+    try {
+      setIsSaving(true);
+      const now = new Date().toISOString();
+      const newVersion = createCharacterVersion(character);
+      const versions = character.versions || [];
+      
+      const characterToSave: Character = {
+        id: character.id || Date.now().toString(),
+        name: character.name || '',
+        title: character.title || '',
+        synopsis: character.synopsis || '',
+        personality: character.personality || '',
+        flaws: character.flaws || '',
+        strengths: character.strengths || '',
+        appearance: character.appearance || '',
+        backstory: character.backstory || '',
+        portraitBase64: character.portraitBase64 || null,
+        voiceSampleBase64: character.voiceSampleBase64 || null,
+        genre: character.genre,
+        createdAt: character.createdAt || now,
+        updatedAt: now,
+        currentVersion: newVersion.version,
+        versions: [...versions, newVersion]
+      };
+      
+      if (initialCharacter?.id) {
+        updateCharacter(initialCharacter.id, characterToSave);
+      } else {
+        addCharacter(characterToSave);
       }
+      
+      toast.success(initialCharacter ? 'Character updated!' : 'Character created!');
+      onBack();
+    } catch (error) {
+      console.error('Error saving character:', error);
+      toast.error('Failed to save character');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [character, initialCharacter, addCharacter, updateCharacter, onBack, createCharacterVersion]);
+
+  const handleDelete = useCallback(() => {
+    if (!safeInitialCharacter.id) return;
+    
+    if (window.confirm('Are you sure you want to delete this character? This cannot be undone.')) {
+      deleteCharacter(safeInitialCharacter.id);
       onBack();
     }
-  };
+  }, [safeInitialCharacter.id, deleteCharacter, onBack]);
 
   return (
     <div className="max-w-6xl mx-auto p-4 bg-gray-800 text-white">
@@ -267,28 +286,31 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1">
           <PortraitManager
-            portraitBase64={character.portraitBase64}
+            portraitBase64={character.portraitBase64 || undefined}
             isPortraitLoading={isPortraitLoading}
             handleFileChange={handleFileChange}
             handleGeneratePortrait={handleGeneratePortrait}
           />
 
           <VoiceManager
-            voiceSampleBase64={character.voiceSampleBase64}
+            voiceSampleBase64={character.voiceSampleBase64 || undefined}
             isAiLoading={isAiLoading}
             handleFileChange={handleFileChange}
             handleGenerateVocalDescription={handleGenerateVocalDescription}
           />
         </div>
 
-        <CharacterFields
-          character={character}
-          handleChange={handleChange}
-          handleFileChange={handleFileChange}
-          handleGenreChange={handleGenreChange}
-          genres={genres}
-        />
-
+        <div className="md:col-span-2">
+          <CharacterFields
+            character={character}
+            handleChange={handleChange}
+            handleFileChange={handleFileChange as any}
+            handleGenreChange={handleGenreChange}
+            genres={genres}
+          />
+        </div>
+      </div>
+      
       <div className="mt-8 pt-6 border-t border-gray-700">
         <h3 className="text-lg font-bold text-indigo-300 mb-4">Evolve with AI</h3>
         <div className="space-y-4">

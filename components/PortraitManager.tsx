@@ -1,5 +1,5 @@
 import React from 'react';
-import { SparklesIcon, UserIcon, UploadIcon }e from './Icons';
+import { SparklesIcon, UserIcon, UploadIcon } from './Icons';
 import Button from './Button';
 
 interface PortraitManagerProps {

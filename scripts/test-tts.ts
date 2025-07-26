@@ -1,6 +1,6 @@
 import { config } from 'dotenv';
-import { textToSpeech } from '../services/geminiService';
-import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs';
+import { textToSpeech, type TTSConfig } from '../services/geminiService';
+import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -27,21 +27,24 @@ async function testTTS(provider: 'google' | 'edge', text: string) {
   
   try {
     const startTime = Date.now();
-    const result = await textToSpeech(text, {
-      provider,
-      google: {
-        voice: 'en-US-Neural2-J',
-        languageCode: 'en-US',
-        speakingRate: 1.0,
-        pitch: 0.0
-      },
-      edge: {
-        voice: 'en-US-ChristopherNeural',
-        rate: 1.0,
-        pitch: '0Hz',
-        volume: 1.0
-      }
-    });
+    const ttsConfig: Partial<TTSConfig> = {
+      provider: provider as 'google' | 'edge',
+      ...(provider === 'google' ? {
+        google: {
+          voice: 'en-US-Neural2-J',
+          languageCode: 'en-US',
+          speakingRate: 1.0,
+          pitch: 0.0
+        }
+      } : {
+        edge: {
+          voice: 'en-US-JennyNeural',
+          rate: '+0%',
+          pitch: '0Hz'
+        }
+      })
+    };
+    const result = await textToSpeech(text, ttsConfig);
 
     const duration = Date.now() - startTime;
     
