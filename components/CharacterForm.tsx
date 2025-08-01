@@ -2,44 +2,18 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { Character, Genre, CharacterVersion } from '../types';
 import Button from './Button';
-import characterTraits from '../character_traits.json';
-import { ArrowLeftIcon, SparklesIcon, TrashIcon, UserIcon, UploadIcon } from './Icons';
+import { ArrowLeftIcon, SparklesIcon, TrashIcon } from './Icons';
 import { fleshOutCharacter, generatePortrait, evolveCharacter, generateVocalDescription } from '../services/geminiService';
 import { useCharacterStore } from '../store';
-import VersionHistory from './VersionHistory';
-import GenreSelect from './GenreSelect';
 import ImportExportMenu from './ImportExportMenu';
 import PortraitManager from './PortraitManager';
 import VoiceManager from './VoiceManager';
-import CharacterFields from './CharacterFields';
+import CharacterFields, { TextareaField } from './CharacterFields';
 
 interface CharacterFormProps {
   initialCharacter: Character | null;
   onBack: () => void;
 }
-
-export const InputField: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string }> = ({ label, id, ...props }) => (
-  <div>
-    <label htmlFor={id} className="block text-sm font-medium text-indigo-300 mb-1">{label}</label>
-    <input id={id} {...props} className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
-  </div>
-);
-
-import PlayButton from './PlayButton'; // No-op change to trigger rebuild
-
-export const TextareaField: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
-  label: string;
-  onPlay?: () => void;
-  isPlaying?: boolean;
-}> = ({ label, id, onPlay, isPlaying, ...props }) => (
-  <div className="relative">
-    <label htmlFor={id} className="block text-sm font-medium text-indigo-300 mb-1">{label}</label>
-    <textarea id={id} {...props} rows={5} className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
-    {onPlay && (
-      <PlayButton onClick={onPlay} isPlaying={!!isPlaying} />
-    )}
-  </div>
-);
 
 import { textToSpeech } from '../services/geminiService';
 

@@ -1,11 +1,39 @@
 import React from 'react';
-import { InputField, TextareaField } from './CharacterForm'; // Assuming InputField and TextareaField are exported from CharacterForm
 import { UploadIcon } from './Icons';
 import characterTraits from '../character_traits.json';
 
 import GenreSelect from './GenreSelect';
 import { Genre } from '../types';
 import TagsInput from './TagsInput';
+
+export const InputField: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string }> = ({ label, id, ...props }) => (
+  <div>
+    <label htmlFor={id} className="block text-sm font-medium text-indigo-300 mb-1">{label}</label>
+    <input id={id} {...props} className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
+  </div>
+);
+
+export const TextareaField: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  label: string;
+  onPlay?: () => void;
+  isPlaying?: boolean;
+}> = ({ label, id, onPlay, isPlaying, ...props }) => (
+  <div className="relative">
+    <label htmlFor={id} className="block text-sm font-medium text-indigo-300 mb-1">{label}</label>
+    <textarea id={id} {...props} rows={5} className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
+    {onPlay && (
+      <button
+        type="button"
+        onClick={onPlay}
+        className="absolute top-0 right-0 mt-1 mr-1 p-2 text-gray-400 hover:text-white transition"
+        aria-label={isPlaying ? 'Stop' : 'Play'}
+      >
+        {/* You can replace this with a proper icon */}
+        {isPlaying ? '■' : '▶'}
+      </button>
+    )}
+  </div>
+);
 
 interface CharacterFieldsProps {
   character: any;
