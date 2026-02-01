@@ -1,6 +1,18 @@
 import { PartialCharacter } from '../types';
 import { validateCharacterResponse, validateImageResponse, validateTTSResponse } from '../schemas/validation';
 
+// Custom API Error class for better error handling
+export class APIError extends Error {
+  constructor(
+    message: string,
+    public statusCode?: number,
+    public errorType?: 'SAFETY' | 'QUOTA_EXCEEDED' | 'INVALID_REQUEST' | 'NETWORK_ERROR' | 'UNKNOWN'
+  ) {
+    super(message);
+    this.name = 'APIError';
+  }
+}
+
 
 // Type for TTS configuration
 
@@ -36,7 +48,12 @@ export interface TTSConfig {
 const PROXY_BASE_URL = 'http://localhost:49152';
 
 // Helper function to make secure API calls through proxy
-const callGeminiAPI = async (endpoint: string, data: any, retries = 3, delay = 1000) => {
+const callGeminiAPI = async <TRequest, TResponse>(
+  endpoint: string, 
+  data: TRequest, 
+  retries = 3, 
+  delay = 1000
+): Promise<TResponse> => {
   for (let i = 0; i < retries; i++) {
     try {
       const response = await fetch(`${PROXY_BASE_URL}${endpoint}`, {
@@ -51,26 +68,32 @@ const callGeminiAPI = async (endpoint: string, data: any, retries = 3, delay = 1
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         const errorMessage = errorData.error || `HTTP ${response.status}`;
         
+        let errorType: APIError['errorType'] = 'UNKNOWN';
+        if (response.status === 400) errorType = 'INVALID_REQUEST';
+        else if (response.status === 429) errorType = 'QUOTA_EXCEEDED';
+        else if (response.status === 403) errorType = 'SAFETY';
+        
         // Retry on 429 (Too Many Requests) or 5xx errors
         if ((response.status === 429 || response.status >= 500) && i < retries - 1) {
           console.warn(`Retrying API call to ${endpoint} due to ${response.status} error. Attempt ${i + 1}/${retries}.`);
           await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
           continue;
         }
-        throw new Error(errorMessage);
+        throw new APIError(errorMessage, response.status, errorType);
       }
       
       return response.json();
     } catch (error) {
+      if (error instanceof APIError) throw error;
       if (i < retries - 1) {
         console.warn(`Retrying API call to ${endpoint} due to network error. Attempt ${i + 1}/${retries}.`);
         await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
         continue;
       }
-      throw error;
+      throw new APIError('Failed to call Gemini API after multiple retries.', undefined, 'NETWORK_ERROR');
     }
   }
-  throw new Error('Failed to call Gemini API after multiple retries.');
+  throw new APIError('Failed to call Gemini API after multiple retries.', undefined, 'NETWORK_ERROR');
 };
 
 interface CharacterResponse {
@@ -85,7 +108,7 @@ export const fleshOutCharacter = async (
     const { textModel } = useCharacterStore.getState();
     const prompt = `Given the following partial character data, generate a complete character profile. Fill in any missing details to make the character rich and engaging. Return the character data as a JSON object. Do not include any markdown code block formatting.\n\nPartial Character Data: ${JSON.stringify(partialChar)}`;
     
-    const result = await callGeminiAPI('/api/gemini/generate', {
+    const result = await callGeminiAPI<{ model: string; prompt: string }, any>('/api/gemini/generate', {
       model: textModel,
       prompt: prompt
     });
@@ -135,6 +158,24 @@ export const fleshOutCharacter = async (
     }
   } catch (error) {
     console.error('Error generating character details with Gemini:', error);
+    if (error instanceof APIError) {
+      let errorMessage = 'Failed to generate character details';
+      switch (error.errorType) {
+        case 'SAFETY':
+          errorMessage = 'Content was blocked by safety filters. Please try different character details.';
+          break;
+        case 'QUOTA_EXCEEDED':
+          errorMessage = 'API quota exceeded. Please try again later.';
+          break;
+        case 'INVALID_REQUEST':
+          errorMessage = 'Invalid request. Please check your character data.';
+          break;
+        case 'NETWORK_ERROR':
+          errorMessage = 'Network error. Please check your connection.';
+          break;
+      }
+      return { data: null, error: errorMessage };
+    }
     return { data: null, error: error instanceof Error ? error.message : 'Failed to generate character details' };
   }
 };

@@ -99,21 +99,58 @@ export const useEvolveCharacter = () => {
   });
 };
 
-// Text to speech mutation
-export const useTextToSpeech = () => {
+// Add character mutation
+export const useAddCharacter = () => {
+  const queryClient = useQueryClient();
+  const { addCharacter } = useCharacterStore();
+
   return useMutation({
-    mutationFn: ({ text, config }: { text: string; config?: any }) =>
-      textToSpeech(text, config),
-    onSuccess: (result) => {
-      if (result.data) {
-        toast.success('Audio generated successfully!');
-      } else if (result.error) {
-        toast.error(`Failed to generate audio: ${result.error}`);
-      }
+    mutationFn: (characterData: Omit<Character, 'id' | 'createdAt' | 'updatedAt' | 'currentVersion' | 'versions'>) =>
+      Promise.resolve(addCharacter(characterData)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: characterKeys.all });
+      toast.success('Character created successfully!');
     },
     onError: (error) => {
-      console.error('Error generating audio:', error);
-      toast.error('Failed to generate audio');
+      console.error('Error adding character:', error);
+      toast.error('Failed to create character');
+    },
+  });
+};
+
+// Update character mutation
+export const useUpdateCharacter = () => {
+  const queryClient = useQueryClient();
+  const { updateCharacter } = useCharacterStore();
+
+  return useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Character> }) =>
+      Promise.resolve(updateCharacter(id, updates)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: characterKeys.all });
+      toast.success('Character updated successfully!');
+    },
+    onError: (error) => {
+      console.error('Error updating character:', error);
+      toast.error('Failed to update character');
+    },
+  });
+};
+
+// Delete character mutation
+export const useDeleteCharacter = () => {
+  const queryClient = useQueryClient();
+  const { deleteCharacter } = useCharacterStore();
+
+  return useMutation({
+    mutationFn: (id: string) => Promise.resolve(deleteCharacter(id)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: characterKeys.all });
+      toast.success('Character deleted successfully!');
+    },
+    onError: (error) => {
+      console.error('Error deleting character:', error);
+      toast.error('Failed to delete character');
     },
   });
 };

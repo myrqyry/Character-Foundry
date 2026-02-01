@@ -73,23 +73,16 @@ export const TTSResponseSchema = z.object({
   provider: z.enum(['google', 'edge'])
 });
 
-// Validation functions
-export const validateCharacter = (data: unknown) => {
-  return CharacterSchema.safeParse(data);
-};
-
-export const validatePartialCharacter = (data: unknown) => {
-  return PartialCharacterSchema.safeParse(data);
-};
-
-export const validateCharacterResponse = (data: unknown) => {
-  return CharacterResponseSchema.safeParse(data);
-};
-
-export const validateImageResponse = (data: unknown) => {
-  return ImageResponseSchema.safeParse(data);
-};
-
-export const validateTTSResponse = (data: unknown) => {
-  return TTSResponseSchema.safeParse(data);
-};
+// Form schema for character editing
+export const CharacterFormSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  title: z.string().optional(),
+  synopsis: z.string().optional(),
+  personality: z.string().optional(),
+  flaws: z.string().optional(),
+  strengths: z.string().optional(),
+  appearance: z.string().optional(),
+  backstory: z.string().optional(),
+  genre: GenreSchema.optional(),
+  vocalDescription: z.string().nullable().optional(),
+});

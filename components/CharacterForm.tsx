@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { Character, CharacterVersion, Genre, PartialCharacter } from '../types';
 import Button from './Button';
 import { ArrowLeftIcon, SparklesIcon, TrashIcon } from './Icons';
-import { useFleshOutCharacter, useGeneratePortrait, useGenerateVocalDescription, useEvolveCharacter } from '../hooks/useAI';
+import { useFleshOutCharacter, useGeneratePortrait, useGenerateVocalDescription, useEvolveCharacter, useAddCharacter, useUpdateCharacter, useDeleteCharacter } from '../hooks/useAI';
 import { useCharacterStore } from '../store';
 import ImportExportMenu from './ImportExportMenu';
 import PortraitManager from './PortraitManager';
@@ -44,10 +44,14 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const [character, setCharacter] = useState<Partial<Character>>({});
   const [prompt, setPrompt] = useState('');
   const [showAudioModal, setShowAudioModal] = useState(false);
+  const { genres } = useCharacterStore();
   const fleshOutMutation = useFleshOutCharacter();
   const generatePortraitMutation = useGeneratePortrait();
   const generateVocalDescriptionMutation = useGenerateVocalDescription();
   const evolveCharacterMutation = useEvolveCharacter();
+  const addCharacterMutation = useAddCharacter();
+  const updateCharacterMutation = useUpdateCharacter();
+  const deleteCharacterMutation = useDeleteCharacter();
 
   useEffect(() => {
     // Initialize character state when initialCharacter changes
@@ -165,76 +169,57 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     );
   };
 
-  const createCharacterVersion = useCallback((char: Partial<Character>): CharacterVersion => ({
-    name: char.name || '',
-    title: char.title || '',
-    synopsis: char.synopsis || '',
-    personality: char.personality || '',
-    flaws: char.flaws || '',
-    strengths: char.strengths || '',
-    appearance: char.appearance || '',
-    backstory: char.backstory || '',
-    portraitBase64: char.portraitBase64 || null,
-    voiceSampleBase64: char.voiceSampleBase64 || null,
-    vocalDescription: char.vocalDescription || null, // Correctly include vocalDescription
-    version: char.currentVersion || 1,
-    updatedAt: char.updatedAt || new Date().toISOString(),
-    changes: ['Initial version']
-  }), []);
-
   const handleSave = useCallback(async () => {
     if (!character.name?.trim()) {
       toast.error('Character name is required');
       return;
     }
 
-    try {
-      const now = new Date().toISOString();
-      const newVersion = createCharacterVersion(character);
-      const versions = character.versions || [];
-      
-      const characterToSave: Character = {
-        id: character.id || Date.now().toString(),
-        name: character.name || '',
-        title: character.title || '',
-        synopsis: character.synopsis || '',
-        personality: character.personality || '',
-        flaws: character.flaws || '',
-        strengths: character.strengths || '',
-        appearance: character.appearance || '',
-        backstory: character.backstory || '',
-        portraitBase64: character.portraitBase64 || null,
-        voiceSampleBase64: character.voiceSampleBase64 || null,
-        vocalDescription: character.vocalDescription || null,
-        genre: character.genre,
-        createdAt: character.createdAt || now,
-        updatedAt: now,
-        currentVersion: newVersion.version,
-        versions: [...versions, newVersion]
-      };
-      
-      if (initialCharacter?.id) {
-        updateCharacter(initialCharacter.id, characterToSave);
-      } else {
-        addCharacter(characterToSave);
-      }
-      
-      toast.success(initialCharacter ? 'Character updated!' : 'Character created!');
-      onBack();
-    } catch (error) {
-      console.error('Error saving character:', error);
-      toast.error('Failed to save character');
+    const now = new Date().toISOString();
+    const characterToSave: Omit<Character, 'id' | 'createdAt' | 'updatedAt' | 'currentVersion' | 'versions'> = {
+      name: character.name || '',
+      title: character.title || '',
+      synopsis: character.synopsis || '',
+      personality: character.personality || '',
+      flaws: character.flaws || '',
+      strengths: character.strengths || '',
+      appearance: character.appearance || '',
+      backstory: character.backstory || '',
+      portraitBase64: character.portraitBase64 || null,
+      voiceSampleBase64: character.voiceSampleBase64 || null,
+      vocalDescription: character.vocalDescription || null,
+      genre: character.genre
+    };
+
+    if (initialCharacter?.id) {
+      updateCharacterMutation.mutate(
+        { id: initialCharacter.id, updates: characterToSave },
+        {
+          onSuccess: () => {
+            onBack();
+          }
+        }
+      );
+    } else {
+      addCharacterMutation.mutate(characterToSave, {
+        onSuccess: () => {
+          onBack();
+        }
+      });
     }
-  }, [character, initialCharacter, addCharacter, updateCharacter, onBack, createCharacterVersion]);
+  }, [character, initialCharacter, updateCharacterMutation, addCharacterMutation, onBack]);
 
   const handleDelete = useCallback(() => {
     if (!initialCharacter?.id) return; // Use initialCharacter directly and check for id
     
     if (window.confirm('Are you sure you want to delete this character? This cannot be undone.')) {
-      deleteCharacter(initialCharacter.id);
-      onBack();
+      deleteCharacterMutation.mutate(initialCharacter.id, {
+        onSuccess: () => {
+          onBack();
+        }
+      });
     }
-  }, [initialCharacter, deleteCharacter, onBack]);
+  }, [initialCharacter, deleteCharacterMutation, onBack]);
 
   return (
     <div className="max-w-6xl mx-auto p-4 bg-gray-800 text-white">

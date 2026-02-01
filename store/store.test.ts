@@ -82,7 +82,7 @@ describe('Character Store', () => {
     const state = useCharacterStore.getState();
     const updatedChar = state.characters.find(c => c.id === character.id);
     expect(updatedChar?.versions).toHaveLength(1);
-    expect(updatedChar?.versions[0].version).toBe(1);
+    expect(updatedChar?.versions[0].version).toBe(2);
   });
 
   it('should delete a character', () => {

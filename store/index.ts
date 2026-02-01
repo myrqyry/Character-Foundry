@@ -2,37 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import { Character, Genre, View, CharacterVersion } from '../types';
-
-const MAX_VERSIONS = 10; // Maximum number of versions to keep per character
-
-// Helper function to detect changes between character versions
-function getChanges(oldChar: Character, updates: Partial<Character>): string[] {
-  const changes: string[] = [];
-  const fields: (keyof Character)[] = [
-    'name', 'title', 'synopsis', 'personality', 'flaws',
-    'strengths', 'appearance', 'backstory', 'genre', 'vocalDescription'
-  ];
-
-  for (const field of fields) {
-    if (field in updates && updates[field] !== oldChar[field]) {
-      changes.push(`Updated ${field}`);
-    }
-  }
-
-  if ('portraitBase64' in updates && updates.portraitBase64 !== oldChar.portraitBase64) {
-    changes.push('Updated portrait');
-  }
-
-  if ('voiceSampleBase64' in updates && updates.voiceSampleBase64 !== oldChar.voiceSampleBase64) {
-    changes.push('Updated voice sample');
-  }
-
-  if ('vocalDescription' in updates && updates.vocalDescription !== oldChar.vocalDescription) {
-    changes.push('Updated vocal description');
-  }
-
-  return changes.length > 0 ? changes : ['No specific changes detected'];
-}
+import { getChanges, createVersionFromCharacter, updateCharacterWithVersion, restoreCharacterVersion } from './versioning';
 
 // Define the store state and actions
 type StoreState = {
@@ -109,29 +79,7 @@ export const useCharacterStore = create<StoreState>()(
             if (char.id !== characterId) return char;
 
             const changes = getChanges(char, updates);
-
-            // Create a new version with the current state before updates
-            const { id, createdAt, currentVersion, versions, ...charData } = char;
-            const newVersion: CharacterVersion = {
-              ...charData,
-              vocalDescription: char.vocalDescription || null, // Include vocalDescription
-              version: char.currentVersion,
-              updatedAt: now,
-              changes
-            };
-
-            // Create the updated character
-            updatedChar = {
-              ...char,
-              ...updates,
-              updatedAt: now,
-              currentVersion: char.currentVersion + 1,
-              versions: [
-                ...(char.versions || []).slice(-(MAX_VERSIONS - 1)),
-                newVersion
-              ]
-            };
-
+            updatedChar = updateCharacterWithVersion(char, updates, changes);
             return updatedChar;
           });
 
@@ -173,15 +121,7 @@ export const useCharacterStore = create<StoreState>()(
 
         if (version === character.currentVersion) {
           // For the current version, create a CharacterVersion from the character
-          const { id, createdAt, currentVersion, versions, ...currentState } = character;
-          const versionData: CharacterVersion = {
-            ...currentState,
-            vocalDescription: character.vocalDescription || null, // Include vocalDescription
-            version: currentVersion,
-            updatedAt: character.updatedAt,
-            changes: ['Current version']
-          };
-          return versionData;
+          return createVersionFromCharacter(character, ['Current version']);
         }
 
         // For previous versions, find the matching version
@@ -192,17 +132,7 @@ export const useCharacterStore = create<StoreState>()(
         const character = get().characters.find(c => c.id === characterId);
         if (!character) return [];
 
-        const currentVersion: CharacterVersion = (() => {
-          const { id, currentVersion, versions, ...currentState } = character;
-          return {
-            ...currentState,
-            vocalDescription: character.vocalDescription || null, // Include vocalDescription
-            version: currentVersion,
-            updatedAt: character.updatedAt,
-            changes: ['Current version']
-          };
-        })();
-
+        const currentVersion = createVersionFromCharacter(character, ['Current version']);
         return [...(character.versions || []), currentVersion].sort((a, b) => b.version - a.version);
       },
 
@@ -210,34 +140,15 @@ export const useCharacterStore = create<StoreState>()(
         const character = get().characters.find(c => c.id === characterId);
         if (!character) return null;
 
-        let versionToRestore: CharacterVersion | null = null;
-
         if (version === character.currentVersion) {
           // Already at this version
           return character;
         }
 
-        versionToRestore = character.versions?.find(v => v.version === version) || null;
+        const versionToRestore = character.versions?.find(v => v.version === version) || null;
         if (!versionToRestore) return null;
 
-        // Create a new version with the restored state
-        const now = new Date().toISOString();
-        const restoredCharacter: Character = {
-          ...character,
-          ...versionToRestore,
-          updatedAt: now,
-          currentVersion: character.currentVersion + 1,
-          versions: [
-            ...(character.versions || []).slice(-(MAX_VERSIONS - 1)),
-            {
-              ...versionToRestore,
-              vocalDescription: versionToRestore.vocalDescription || null, // Include vocalDescription
-              version: character.currentVersion + 1,
-              updatedAt: now,
-              changes: [`Restored from version ${version}`]
-            }
-          ]
-        };
+        const restoredCharacter = restoreCharacterVersion(character, versionToRestore);
 
         // Update the store
         set((state) => ({

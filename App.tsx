@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { View } from './types';
 import Dashboard from './components/Dashboard';
 import CharacterForm from './components/CharacterForm';
@@ -13,20 +13,27 @@ function App() {
   const { characters, currentView, editingCharacterId } = useCharacterStore();
   const { setCurrentView, setEditingCharacterId } = useCharacterActions();
   const [showOptionsModal, setShowOptionsModal] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const handleCreateNew = () => {
-    setEditingCharacterId(null);
-    setCurrentView(View.Editor);
+    startTransition(() => {
+      setEditingCharacterId(null);
+      setCurrentView(View.Editor);
+    });
   };
 
   const handleEditCharacter = (id: string) => {
-    setEditingCharacterId(id);
-    setCurrentView(View.Editor);
+    startTransition(() => {
+      setEditingCharacterId(id);
+      setCurrentView(View.Editor);
+    });
   };
 
   const handleBackToDashboard = () => {
-    setCurrentView(View.Dashboard);
-    setEditingCharacterId(null);
+    startTransition(() => {
+      setCurrentView(View.Dashboard);
+      setEditingCharacterId(null);
+    });
   };
 
   const editingCharacter = editingCharacterId ? characters.find(c => c.id === editingCharacterId) ?? null : null;
