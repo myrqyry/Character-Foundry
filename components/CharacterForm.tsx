@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { Character, CharacterVersion, Genre, PartialCharacter } from '../types';
 import Button from './Button';
 import { ArrowLeftIcon, SparklesIcon, TrashIcon } from './Icons';
-import { fleshOutCharacter, generatePortrait, evolveCharacter, generateVocalDescription } from '../services/geminiService';
+import { useFleshOutCharacter, useGeneratePortrait, useGenerateVocalDescription, useEvolveCharacter } from '../hooks/useAI';
 import { useCharacterStore } from '../store';
 import ImportExportMenu from './ImportExportMenu';
 import PortraitManager from './PortraitManager';
@@ -42,25 +42,17 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   // Destructure props with defaults to avoid undefined errors
   const safeInitialCharacter = initialCharacter || {};
   const [character, setCharacter] = useState<Partial<Character>>({});
-  const [isSaving, setIsSaving] = useState(false);
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  const [isPortraitLoading, setIsPortraitLoading] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [showAudioModal, setShowAudioModal] = useState(false);
-  const { 
-    addCharacter, 
-    updateCharacter, 
-    deleteCharacter
-  } = useCharacterStore();
-  const genres = useCharacterStore((state) => state.genres);
+  const fleshOutMutation = useFleshOutCharacter();
+  const generatePortraitMutation = useGeneratePortrait();
+  const generateVocalDescriptionMutation = useGenerateVocalDescription();
+  const evolveCharacterMutation = useEvolveCharacter();
 
   useEffect(() => {
-    // Deep compare to prevent infinite re-renders if initialCharacter is an object
-    // that gets recreated on every render but has the same content.
-    if (JSON.stringify(character) !== JSON.stringify(safeInitialCharacter)) {
-      setCharacter(safeInitialCharacter);
-    }
-  }, [safeInitialCharacter, character]);
+    // Initialize character state when initialCharacter changes
+    setCharacter(safeInitialCharacter);
+  }, [safeInitialCharacter]);
 
   useEffect(() => {
     return () => {
@@ -115,49 +107,40 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   }, []);
 
   const handleFleshOut = useCallback(async () => {
-    setIsAiLoading(true);
-    const { data, error } = await fleshOutCharacter(character as PartialCharacter);
-    if (data) {
-      setCharacter(prev => ({...prev, ...data}));
-      toast.success("AI flesh out complete!");
-    } else if (error) {
-      console.error(error);
-      toast.error(`AI generation failed: ${error}`);
-    }
-    setIsAiLoading(false);
-  }, [character]);
+    fleshOutMutation.mutate(character as PartialCharacter, {
+      onSuccess: (result) => {
+        if (result.data) {
+          setCharacter(prev => ({...prev, ...result.data}));
+        }
+      }
+    });
+  }, [character, fleshOutMutation]);
 
   const handleGeneratePortrait = useCallback(async () => {
     if (!character) return;
     
-    setIsPortraitLoading(true);
-    const { data, error } = await generatePortrait(character as PartialCharacter);
-    if (data) {
-      setCharacter(prev => ({ ...prev, portraitBase64: data }));
-      toast.success("Portrait generated!");
-    } else if (error) {
-      console.error(error);
-      toast.error(`Portrait generation failed: ${error}`);
-    }
-    setIsPortraitLoading(false);
-  }, [character]);
+    generatePortraitMutation.mutate(character as PartialCharacter, {
+      onSuccess: (result) => {
+        if (result.data) {
+          setCharacter(prev => ({ ...prev, portraitBase64: result.data }));
+        }
+      }
+    });
+  }, [character, generatePortraitMutation]);
 
   const handleGenerateVocalDescription = useCallback(async () => {
     if (!character.voiceSampleBase64) {
       toast.error("Please upload a voice sample first.");
       return;
     }
-    setIsAiLoading(true);
-    const { data, error } = await generateVocalDescription(character.voiceSampleBase64);
-    if (data) {
-      setCharacter(prev => ({ ...prev, vocalDescription: data }));
-      toast.success("Vocal description generated!");
-    } else if (error) {
-      console.error(error);
-      toast.error(`Vocal description generation failed: ${error}`);
-    }
-    setIsAiLoading(false);
-  }, [character.voiceSampleBase64]);
+    generateVocalDescriptionMutation.mutate(character.voiceSampleBase64, {
+      onSuccess: (result) => {
+        if (result.data) {
+          setCharacter(prev => ({ ...prev, vocalDescription: result.data }));
+        }
+      }
+    });
+  }, [character.voiceSampleBase64, generateVocalDescriptionMutation]);
 
   const handleEvolveCharacter = async () => {
     if (!prompt.trim()) {
@@ -165,29 +148,21 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
       return;
     }
 
-    try {
-      setIsAiLoading(true);
-      const result = await evolveCharacter(character as Character, prompt);
-      
-      if (result.error) {
-        throw new Error(result.error);
+    evolveCharacterMutation.mutate(
+      { character: character as Character, prompt },
+      {
+        onSuccess: (result) => {
+          if (result.data) {
+            setCharacter(prev => ({
+              ...prev,
+              ...result.data,
+              name: result.data?.name || prev.name, // Ensure name is never undefined
+            }));
+            setPrompt('');
+          }
+        }
       }
-
-      if (result.data) {
-        setCharacter(prev => ({
-          ...prev,
-          ...result.data,
-          name: result.data?.name || prev.name, // Ensure name is never undefined
-        }));
-        setPrompt('');
-        toast.success('Character evolved with AI!');
-      }
-    } catch (error) {
-      console.error('Error evolving character:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to evolve character');
-    } finally {
-      setIsAiLoading(false);
-    }
+    );
   };
 
   const createCharacterVersion = useCallback((char: Partial<Character>): CharacterVersion => ({
@@ -214,7 +189,6 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     }
 
     try {
-      setIsSaving(true);
       const now = new Date().toISOString();
       const newVersion = createCharacterVersion(character);
       const versions = character.versions || [];
@@ -231,6 +205,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
         backstory: character.backstory || '',
         portraitBase64: character.portraitBase64 || null,
         voiceSampleBase64: character.voiceSampleBase64 || null,
+        vocalDescription: character.vocalDescription || null,
         genre: character.genre,
         createdAt: character.createdAt || now,
         updatedAt: now,
@@ -249,8 +224,6 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     } catch (error) {
       console.error('Error saving character:', error);
       toast.error('Failed to save character');
-    } finally {
-      setIsSaving(false);
     }
   }, [character, initialCharacter, addCharacter, updateCharacter, onBack, createCharacterVersion]);
 
@@ -291,14 +264,14 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
         <div className="md:col-span-1">
           <PortraitManager
             portraitBase64={character.portraitBase64 || undefined}
-            isPortraitLoading={isPortraitLoading}
+            isPortraitLoading={generatePortraitMutation.isPending}
             handleFileChange={handleFileChange}
             handleGeneratePortrait={handleGeneratePortrait}
           />
 
           <VoiceManager
             voiceSampleBase64={character.voiceSampleBase64 || undefined}
-            isAiLoading={isAiLoading}
+            isAiLoading={generateVocalDescriptionMutation.isPending}
             handleFileChange={handleFileChange}
             handleGenerateVocalDescription={handleGenerateVocalDescription}
           />
@@ -327,18 +300,18 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
             placeholder="e.g., 'Give the character a mysterious scar over their left eye', 'Make the backstory more tragic', 'They found a powerful artifact, describe it'"
           />
           <div className="flex justify-end gap-4">
-            <Button onClick={handleEvolveCharacter} variant="secondary" disabled={isAiLoading || !prompt}>
-              <SparklesIcon className={`mr-2 h-5 w-5 ${isAiLoading ? 'animate-spin' : ''}`} />
-              {isAiLoading ? 'Evolving...' : 'Evolve Character'}
+            <Button onClick={handleEvolveCharacter} variant="secondary" disabled={evolveCharacterMutation.isPending || !prompt}>
+              <SparklesIcon className={`mr-2 h-5 w-5 ${evolveCharacterMutation.isPending ? 'animate-spin' : ''}`} />
+              {evolveCharacterMutation.isPending ? 'Evolving...' : 'Evolve Character'}
             </Button>
           </div>
         </div>
       </div>
 
       <div className="mt-8 pt-6 border-t border-gray-700 flex justify-end gap-4">
-        <Button onClick={handleFleshOut} variant="secondary" disabled={isAiLoading}>
-          <SparklesIcon className={`mr-2 h-5 w-5 ${isAiLoading ? 'animate-spin' : ''}`} />
-          {isAiLoading ? 'Generating...' : 'Flesh out with AI'}
+        <Button onClick={handleFleshOut} variant="secondary" disabled={fleshOutMutation.isPending}>
+          <SparklesIcon className={`mr-2 h-5 w-5 ${fleshOutMutation.isPending ? 'animate-spin' : ''}`} />
+          {fleshOutMutation.isPending ? 'Generating...' : 'Flesh out with AI'}
         </Button>
         <Button onClick={handleSave}>
           Save Character

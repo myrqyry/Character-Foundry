@@ -15,6 +15,7 @@ const createTestCharacter = (overrides: Partial<Character> = {}): Character => (
   backstory: 'Test backstory',
   portraitBase64: null,
   voiceSampleBase64: null,
+  vocalDescription: null,
   genre: 'High Fantasy',
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -47,6 +48,7 @@ describe('Character Store', () => {
       backstory: 'New backstory',
       portraitBase64: null,
       voiceSampleBase64: null,
+      vocalDescription: null,
       genre: 'Cyberpunk' as Genre
     };
 
@@ -113,6 +115,7 @@ describe('Character Store', () => {
           backstory: 'Test backstory',
           portraitBase64: null,
           voiceSampleBase64: null,
+          vocalDescription: null,
           genre: 'High Fantasy',
           version: 1,
           updatedAt: new Date().toISOString(),
@@ -129,6 +132,7 @@ describe('Character Store', () => {
           backstory: 'Test backstory',
           portraitBase64: null,
           voiceSampleBase64: null,
+          vocalDescription: null,
           genre: 'High Fantasy',
           version: 2,
           updatedAt: new Date().toISOString(),
@@ -175,6 +179,7 @@ describe('Character Store', () => {
           backstory: 'Test backstory',
           portraitBase64: null,
           voiceSampleBase64: null,
+          vocalDescription: null,
           genre: 'High Fantasy',
           version: 1,
           updatedAt: new Date().toISOString(),

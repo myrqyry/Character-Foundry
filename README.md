@@ -2,56 +2,227 @@
 
 ## Project Description
 
-The Character Foundry is a web application designed to help users create and manage detailed fictional characters. It leverages the power of AI, specifically Google's Gemini API, to generate rich character descriptions, backstories, and other attributes, streamlining the creative process for writers, game developers, and role-playing enthusiasts.
+The Character Foundry is a modern web application designed to help users create and manage detailed fictional characters using AI assistance. It leverages Google's Gemini API to generate rich character profiles, backstories, personality traits, and physical descriptions, streamlining the creative process for writers, game developers, and role-playing enthusiasts.
+
+The application features a React-based frontend with TypeScript, a Flask backend proxy for API management, and comprehensive state management with Zustand and TanStack Query.
 
 ## Key Features
 
 *   **AI-Powered Character Generation**: Utilize the Gemini API to generate detailed character profiles, including names, backstories, personality traits, and physical descriptions.
-*   **Character Profile Management**: Create, edit, and organize multiple character profiles.
-*   **Intuitive User Interface**: Built with React and styled with Tailwind CSS for a clean and responsive user experience.
-*   **Environment Configuration**: Uses Vite for efficient development and building.
-*   **API Integration**: Seamless integration with Google's Generative AI.
+*   **Character Profile Management**: Create, edit, and organize multiple character profiles with version history.
+*   **Version Control**: Track character changes over time with automatic versioning and the ability to restore previous versions.
+*   **Portrait Generation**: Generate character portraits using Gemini's image generation capabilities.
+*   **Voice Generation**: Create character voice samples using Google TTS and Edge TTS providers.
+*   **Vocal Description Analysis**: Analyze voice samples to generate detailed vocal descriptions.
+*   **Theme Support**: Toggle between light and dark themes with system preference detection.
+*   **Intuitive User Interface**: Built with React, styled with Tailwind CSS, and enhanced with shadcn/ui components.
+*   **Real-time Validation**: Runtime validation using Zod schemas for data integrity.
+*   **Error Boundaries**: Comprehensive error handling with React Error Boundaries.
+*   **Responsive Design**: Mobile-friendly interface that works across all devices.
+*   **API Integration**: Seamless integration with Google's Generative AI, Google TTS, and Edge TTS APIs.
 
 ## Tech Stack
 
-*   **Frontend Framework**: React
-*   **Language**: TypeScript
-*   **Build Tool**: Vite
-*   **Styling**: Tailwind CSS
-*   **AI Integration**: Google Gemini API (`@google/genai`)
+*   **Frontend Framework**: React 19.2.4
+*   **Language**: TypeScript 5.7.3
+*   **Build Tool**: Vite 6.4.1
+*   **Styling**: Tailwind CSS 3.4.19 + shadcn/ui
+*   **State Management**: Zustand 4.5.7 + TanStack Query 5.x
+*   **Backend**: Flask (Python proxy server)
+*   **Validation**: Zod
+*   **AI Integration**: Google Gemini API (@google/genai, @google/generative-ai)
+*   **Package Manager**: pnpm
+*   **Testing**: Vitest 3.2.4 + React Testing Library
+*   **Development Tools**: ESLint, TypeScript, Hot Module Replacement
+
+## Project Structure
+
+```
+the-character-foundry/
+├── components/           # React components
+│   ├── ErrorBoundary.tsx # Error boundary component
+│   ├── Icons.tsx         # Icon components
+│   ├── QueryProvider.tsx # TanStack Query provider
+│   ├── ThemeProvider.tsx # Theme context provider
+│   ├── ThemeToggle.tsx   # Theme toggle component
+│   └── ...               # Other UI components
+├── hooks/                # Custom React hooks
+│   └── useAI.ts          # AI operation hooks
+├── schemas/              # Validation schemas
+│   └── validation.ts     # Zod validation schemas
+├── services/             # API service layer
+│   └── geminiService.ts  # Gemini API integration
+├── store/                # State management
+│   └── index.ts          # Zustand store
+├── types.ts              # TypeScript type definitions
+├── proxy.py              # Flask backend proxy
+├── requirements.txt      # Python dependencies
+└── package.json          # Node.js dependencies
+```
 
 ## Setup Instructions
 
-1.  **Clone the repository**:
-    ```bash
-    git clone https://github.com/myrqyry/character-foundry.git
-    cd character-foundry
-    ```
-2.  **Install dependencies**:
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
-3.  **Configure Environment Variables**:
-    Create a `.env.local` file in the root of the project and add your Google Gemini API key:
-    ```
-    GEMINI_API_KEY=YOUR_GEMINI_API_KEY
-    ```
-    Replace `YOUR_GEMINI_API_KEY` with your actual API key obtained from Google AI Studio.
+### Prerequisites
+
+- Node.js 18+ and pnpm
+- Python 3.8+ with pip
+- Google Gemini API key (from [Google AI Studio](https://aistudio.google.com/app/apikey))
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/myrqyry/character-foundry.git
+cd character-foundry
+```
+
+### 2. Install frontend dependencies
+
+```bash
+pnpm install
+```
+
+### 3. Install backend dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configure Environment Variables
+
+Create `.env.local` in the root directory with your API keys:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+OPENWEATHERMAP_API_KEY=your_openweathermap_key_here
+```
+
+### 5. Start the development servers
+
+The application uses concurrently to run both frontend and backend:
+
+```bash
+pnpm start
+```
+
+This will start:
+- Frontend development server on `http://localhost:5173`
+- Backend proxy server on `http://localhost:49152`
+
+### Alternative: Manual startup
+
+**Terminal 1 - Backend:**
+```bash
+python proxy.py
+```
+
+**Terminal 2 - Frontend:**
+```bash
+pnpm dev
+```
 
 ## Usage Instructions
 
-1.  **Start the development server**:
-    ```bash
-    npm run dev
-    # or
-    yarn dev
-    ```
-2.  **Open in Browser**: The application will typically be available at `http://localhost:5173` (or another port if Vite chooses differently).
-3.  **Create Characters**: Navigate to the application to start creating new characters. Use the AI enhancement feature to generate detailed attributes.
-4.  **Manage Profiles**: Save, edit, and organize your character profiles as needed.
+1. **Access the Application**: Open `http://localhost:5173` in your browser.
+
+2. **Create Characters**:
+   - Click "Create New Character" to start building a character profile
+   - Fill in basic details (name, title, synopsis)
+   - Use AI features to flesh out personality, flaws, strengths, and backstory
+   - Generate portraits and voice samples
+
+3. **AI Enhancement Features**:
+   - **Flesh Out**: Generate complete character details from partial information
+   - **Evolve Character**: Make targeted changes using natural language prompts
+   - **Generate Portrait**: Create visual representations using AI image generation
+   - **Voice Analysis**: Upload audio samples and generate vocal descriptions
+
+4. **Version History**:
+   - All character changes are automatically versioned
+   - View change history and restore previous versions
+   - Compare different iterations of your characters
+
+5. **Theme Toggle**:
+   - Click the sun/moon icon in the header to switch between light and dark themes
+   - Theme preference is automatically saved
+
+6. **Import/Export**:
+   - Export individual characters or entire collections
+   - Import characters from JSON files
+   - Share character profiles across projects
+
+## Development
+
+### Available Scripts
+
+```bash
+# Development
+pnpm dev              # Start development server
+pnpm start            # Start both frontend and backend concurrently
+
+# Building
+pnpm build            # Build for production
+pnpm preview          # Preview production build
+
+# Testing
+pnpm test             # Run tests
+pnpm test:watch       # Run tests in watch mode
+pnpm test:coverage    # Run tests with coverage
+
+# Code Quality
+pnpm type-check       # Run TypeScript type checking
+```
+
+### Testing
+
+The project uses Vitest for unit testing with React Testing Library:
+
+```bash
+pnpm test:coverage
+```
+
+Tests cover:
+- Store logic and state management
+- Component rendering and interactions
+- API service functions
+- Validation schemas
+
+### Code Quality
+
+- **TypeScript**: Strict type checking enabled
+- **ESLint**: Code linting and formatting
+- **Prettier**: Code formatting (via ESLint)
+- **Error Boundaries**: Runtime error handling
+- **Zod Validation**: Runtime data validation
+
+## API Integration
+
+The application integrates with multiple APIs:
+
+- **Google Gemini API**: Text generation, image generation, voice analysis
+- **Google TTS API**: Text-to-speech generation
+- **Edge TTS API**: Alternative TTS provider
+- **OpenWeatherMap API**: Weather data integration (future feature)
+
+All API calls are proxied through the Flask backend for security and rate limiting.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature-name`
+3. Make your changes and add tests
+4. Run the test suite: `pnpm test`
+5. Commit your changes: `git commit -m 'feat: add your feature'`
+6. Push to the branch: `git push origin feature/your-feature-name`
+7. Submit a pull request
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+
+## Acknowledgments
+
+- Built with [React](https://reactjs.org/) and [Vite](https://vitejs.dev/)
+- Powered by [Google Gemini API](https://ai.google.dev/gemini-api)
+- Styled with [Tailwind CSS](https://tailwindcss.com/)
+- State management with [Zustand](https://zustand-demo.pmnd.rs/) and [TanStack Query](https://tanstack.com/query)
+- Icons from [Heroicons](https://heroicons.com/)

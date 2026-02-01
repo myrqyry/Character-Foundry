@@ -1,4 +1,5 @@
 import { PartialCharacter } from '../types';
+import { validateCharacterResponse, validateImageResponse, validateTTSResponse } from '../schemas/validation';
 
 
 // Type for TTS configuration
@@ -6,7 +7,7 @@ import { PartialCharacter } from '../types';
 // Types for TTS configuration
 type TTSProvider = 'google' | 'edge';
 
-interface TTSConfig {
+export interface TTSConfig {
   provider: TTSProvider;
   google?: {
     voice?: string;
@@ -109,7 +110,9 @@ export const fleshOutCharacter = async (
     // Attempt to parse the response as JSON
     try {
       const fullCharacterData = JSON.parse(text) as PartialCharacter;
-      return { 
+      
+      // Validate the parsed data
+      const validation = validateCharacterResponse({
         data: { 
           ...fullCharacterData,
           updatedAt: new Date().toISOString(),
@@ -117,7 +120,14 @@ export const fleshOutCharacter = async (
           versions: []
         }, 
         error: null 
-      };
+      });
+      
+      if (!validation.success) {
+        console.error('Validation error:', validation.error);
+        return { data: null, error: 'Invalid character data structure' };
+      }
+      
+      return validation.data;
     } catch (parseError) {
       console.error('Error parsing character data:', parseError);
       console.error('Response text:', text);
@@ -239,14 +249,16 @@ async function textToSpeechGoogle(
     const audioBase64 = responseData.audioContent;
     
     if (!audioBase64) {
-      throw new Error('No audio content in response from Google TTS');
+      const validation = validateTTSResponse({ data: null, error: 'No audio content in response from Google TTS', provider: 'google' });
+      return validation.data!;
     }
 
-    return { 
+    const validation = validateTTSResponse({ 
       data: `data:audio/mp3;base64,${audioBase64}`, 
       error: null,
       provider: 'google'
-    };
+    });
+    return validation.success ? validation.data : { data: null, error: 'Invalid TTS response', provider: 'google' };
   } catch (error) {
     console.error('Error in Google TTS service:', error);
     throw error; // Re-throw to be handled by the caller
@@ -288,14 +300,16 @@ async function textToSpeechEdge(
     const audioBase64 = responseData.audioContent;
     
     if (!audioBase64) {
-      throw new Error('No audio content in response from Edge TTS');
+      const validation = validateTTSResponse({ data: null, error: 'No audio content in response from Edge TTS', provider: 'edge' });
+      return validation.data!;
     }
 
-    return { 
+    const validation = validateTTSResponse({ 
       data: `data:audio/mp3;base64,${audioBase64}`, 
       error: null,
       provider: 'edge'
-    };
+    });
+    return validation.success ? validation.data : { data: null, error: 'Invalid TTS response', provider: 'edge' };
   } catch (error) {
     console.error('Error in Edge TTS service:', error);
     throw error; // Re-throw to be handled by the caller
@@ -378,7 +392,7 @@ export const generatePortrait = async (
 
     // The proxy now returns a URL to the saved image
     if (!imageResult || !imageResult.imageUrl) {
-      return { data: null, error: 'No image URL in response from proxy' };
+      return validateImageResponse({ data: null, error: 'No image URL in response from proxy' }).data!;
     }
 
     // Prepend the proxy base URL if the URL is relative
@@ -386,7 +400,8 @@ export const generatePortrait = async (
       ? `${PROXY_BASE_URL}${imageResult.imageUrl}`
       : imageResult.imageUrl;
 
-    return { data: imageUrl, error: null };
+    const validation = validateImageResponse({ data: imageUrl, error: null });
+    return validation.success ? validation.data : { data: null, error: 'Invalid image response' };
   } catch (error) {
     console.error('Error generating portrait with Gemini:', error);
     return { data: null, error: error instanceof Error ? error.message : 'Failed to generate portrait' };

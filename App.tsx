@@ -6,6 +6,7 @@ import { SparklesIcon, SettingsIcon } from './components/Icons';
 import { useCharacterStore, useCharacterActions } from './store';
 import GenerationOptionsModal from './components/GenerationOptionsModal';
 import { Toaster } from 'react-hot-toast';
+import ThemeToggle from './components/ThemeToggle';
 
 function App() {
   // Use separate hooks for state and actions
@@ -35,13 +36,16 @@ function App() {
       <Toaster position="top-center" reverseOrder={false} />
       <header className="flex justify-between items-center p-4 bg-gray-800 shadow-md">
         <h1 className="text-3xl font-bold text-indigo-400">The Character Foundry</h1>
-        <button 
-          onClick={() => setShowOptionsModal(true)}
-          className="p-2 rounded-full hover:bg-gray-700 transition"
-          title="Generation Options"
-        >
-          <SettingsIcon className="w-6 h-6 text-gray-300" />
-        </button>
+        <div className="flex items-center space-x-4">
+          <ThemeToggle />
+          <button 
+            onClick={() => setShowOptionsModal(true)}
+            className="p-2 rounded-full hover:bg-gray-700 transition"
+            title="Generation Options"
+          >
+            <SettingsIcon className="w-6 h-6 text-gray-300" />
+          </button>
+        </div>
       </header>
       <main>
         {currentView === View.Dashboard ? (
