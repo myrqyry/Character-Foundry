@@ -52,3 +52,5 @@ Thumbs.db
 .eslintcache
 .env.production.local
 .next
+
+test-output
