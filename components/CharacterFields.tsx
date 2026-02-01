@@ -23,7 +23,7 @@ const CharacterFields: React.FC<CharacterFieldsProps> = ({ character, handleChan
     switch (type) {
       case 'text':
       case 'color':
-        return <InputField key={name} label={label} id={name} name={name} type={type} value={value} onChange={handleChange} />;
+        return <InputField key={name} label={label} id={name} name={name} type={type} value={value || '#000000'} onChange={handleChange} />;
       case 'textarea':
         return <TextareaField key={name} label={label} id={name} name={name} value={value} onChange={handleChange} />;
       case 'genre':

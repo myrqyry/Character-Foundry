@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { Character, CharacterVersion, Genre } from '../types';
+import { Character, CharacterVersion, Genre, PartialCharacter } from '../types';
 import Button from './Button';
 import { ArrowLeftIcon, SparklesIcon, TrashIcon } from './Icons';
 import { fleshOutCharacter, generatePortrait, evolveCharacter, generateVocalDescription } from '../services/geminiService';
@@ -55,8 +55,12 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const genres = useCharacterStore((state) => state.genres);
 
   useEffect(() => {
-    setCharacter(safeInitialCharacter);
-  }, [safeInitialCharacter]);
+    // Deep compare to prevent infinite re-renders if initialCharacter is an object
+    // that gets recreated on every render but has the same content.
+    if (JSON.stringify(character) !== JSON.stringify(safeInitialCharacter)) {
+      setCharacter(safeInitialCharacter);
+    }
+  }, [safeInitialCharacter, character]);
 
   useEffect(() => {
     return () => {
@@ -112,7 +116,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
 
   const handleFleshOut = useCallback(async () => {
     setIsAiLoading(true);
-    const { data, error } = await fleshOutCharacter({ ...character });
+    const { data, error } = await fleshOutCharacter(character as PartialCharacter);
     if (data) {
       setCharacter(prev => ({...prev, ...data}));
       toast.success("AI flesh out complete!");
@@ -127,7 +131,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     if (!character) return;
     
     setIsPortraitLoading(true);
-    const { data, error } = await generatePortrait({ ...character });
+    const { data, error } = await generatePortrait(character as PartialCharacter);
     if (data) {
       setCharacter(prev => ({ ...prev, portraitBase64: data }));
       toast.success("Portrait generated!");
@@ -197,7 +201,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     backstory: char.backstory || '',
     portraitBase64: char.portraitBase64 || null,
     voiceSampleBase64: char.voiceSampleBase64 || null,
-    vocalDescription: char.versions?.[0]?.vocalDescription || null,
+    vocalDescription: char.vocalDescription || null, // Correctly include vocalDescription
     version: char.currentVersion || 1,
     updatedAt: char.updatedAt || new Date().toISOString(),
     changes: ['Initial version']
@@ -251,13 +255,13 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   }, [character, initialCharacter, addCharacter, updateCharacter, onBack, createCharacterVersion]);
 
   const handleDelete = useCallback(() => {
-    if (!safeInitialCharacter.id) return;
+    if (!initialCharacter?.id) return; // Use initialCharacter directly and check for id
     
     if (window.confirm('Are you sure you want to delete this character? This cannot be undone.')) {
-      deleteCharacter(safeInitialCharacter.id);
+      deleteCharacter(initialCharacter.id);
       onBack();
     }
-  }, [safeInitialCharacter.id, deleteCharacter, onBack]);
+  }, [initialCharacter, deleteCharacter, onBack]);
 
   return (
     <div className="max-w-6xl mx-auto p-4 bg-gray-800 text-white">

@@ -31,6 +31,7 @@ export interface Character {
   backstory: string;
   portraitBase64: string | null;
   voiceSampleBase64: string | null;
+  vocalDescription: string | null;
   createdAt: string;
   updatedAt: string;
   currentVersion: number;

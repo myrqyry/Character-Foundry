@@ -128,6 +128,7 @@ def gemini_generate_image():
 def generate_image_imagen():
     """Proxy for Imagen 3 Image Generation"""
     data = request.json
+    print(f"Incoming request data to /api/imagen/generate: {data}")
     prompt = data.get('prompt')
 
     if not prompt:
@@ -149,12 +150,14 @@ def generate_image_imagen():
             }
         ],
         'generationConfig': {
-            'responseModalities': ['IMAGE']
+            'responseMimeType': 'image/png'
         }
     }
+    print(f"Sending request to Gemini API. URL: {url}, Payload: {payload}")
 
     try:
         response = requests.post(url, headers=headers, json=payload)
+        print(f"Received response from Gemini API. Status: {response.status_code}, Content: {response.text}")
         response.raise_for_status()
         image_data = response.json()
 

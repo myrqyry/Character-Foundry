@@ -27,9 +27,6 @@ interface TTSConfig {
 
 
 // Model configurations
-import { useCharacterStore } from '../store';
-
-// Model configurations
 // These are now dynamically loaded from the store
 // const TEXT_MODEL = 'gemini-2.5-flash';
 // const IMAGE_MODEL = 'gemini-2.0-flash-preview-image-generation';
@@ -38,21 +35,41 @@ import { useCharacterStore } from '../store';
 const PROXY_BASE_URL = 'http://localhost:49152';
 
 // Helper function to make secure API calls through proxy
-const callGeminiAPI = async (endpoint: string, data: any) => {
-  const response = await fetch(`${PROXY_BASE_URL}${endpoint}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data)
-  });
-  
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(errorData.error || `HTTP ${response.status}`);
+const callGeminiAPI = async (endpoint: string, data: any, retries = 3, delay = 1000) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(`${PROXY_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        const errorMessage = errorData.error || `HTTP ${response.status}`;
+        
+        // Retry on 429 (Too Many Requests) or 5xx errors
+        if ((response.status === 429 || response.status >= 500) && i < retries - 1) {
+          console.warn(`Retrying API call to ${endpoint} due to ${response.status} error. Attempt ${i + 1}/${retries}.`);
+          await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+          continue;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      return response.json();
+    } catch (error) {
+      if (i < retries - 1) {
+        console.warn(`Retrying API call to ${endpoint} due to network error. Attempt ${i + 1}/${retries}.`);
+        await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+        continue;
+      }
+      throw error;
+    }
   }
-  
-  return response.json();
+  throw new Error('Failed to call Gemini API after multiple retries.');
 };
 
 interface CharacterResponse {

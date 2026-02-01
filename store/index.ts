@@ -9,24 +9,28 @@ const MAX_VERSIONS = 10; // Maximum number of versions to keep per character
 function getChanges(oldChar: Character, updates: Partial<Character>): string[] {
   const changes: string[] = [];
   const fields: (keyof Character)[] = [
-    'name', 'title', 'synopsis', 'personality', 'flaws', 
-    'strengths', 'appearance', 'backstory', 'genre'
+    'name', 'title', 'synopsis', 'personality', 'flaws',
+    'strengths', 'appearance', 'backstory', 'genre', 'vocalDescription'
   ];
-  
+
   for (const field of fields) {
     if (field in updates && updates[field] !== oldChar[field]) {
       changes.push(`Updated ${field}`);
     }
   }
-  
+
   if ('portraitBase64' in updates && updates.portraitBase64 !== oldChar.portraitBase64) {
     changes.push('Updated portrait');
   }
-  
+
   if ('voiceSampleBase64' in updates && updates.voiceSampleBase64 !== oldChar.voiceSampleBase64) {
     changes.push('Updated voice sample');
   }
-  
+
+  if ('vocalDescription' in updates && updates.vocalDescription !== oldChar.vocalDescription) {
+    changes.push('Updated vocal description');
+  }
+
   return changes.length > 0 ? changes : ['No specific changes detected'];
 }
 
@@ -42,7 +46,7 @@ type StoreState = {
   edgeTtsVoice: string;
   textModel: string;
   imageModel: string;
-  
+
   // Actions
   addCharacter: (characterData: Omit<Character, 'id' | 'createdAt' | 'updatedAt' | 'currentVersion' | 'versions'>) => Character;
   updateCharacter: (id: string, updates: Partial<Character>) => Character | null;
@@ -74,7 +78,7 @@ export const useCharacterStore = create<StoreState>()(
       edgeTtsVoice: 'en-US-GuyNeural', // Default Edge TTS voice
       textModel: 'gemini-2.5-flash', // Default text model
       imageModel: 'gemini-2.0-flash-preview-image-generation', // Default image model
-      
+
       // Actions
       addCharacter: (characterData) => {
         const now = new Date().toISOString();
@@ -86,35 +90,36 @@ export const useCharacterStore = create<StoreState>()(
           currentVersion: 1,
           versions: []
         };
-        
+
         set((state) => ({
           characters: [...state.characters, newCharacter].sort(
             (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
           )
         }));
-        
+
         return newCharacter;
       },
-      
+
       updateCharacter: (characterId: string, updates: Partial<Character>) => {
         const now = new Date().toISOString();
         let updatedChar: Character | null = null;
-        
+
         set((state) => {
           const updatedCharacters = state.characters.map((char) => {
             if (char.id !== characterId) return char;
-            
+
             const changes = getChanges(char, updates);
-            
+
             // Create a new version with the current state before updates
             const { id, createdAt, currentVersion, versions, ...charData } = char;
             const newVersion: CharacterVersion = {
               ...charData,
+              vocalDescription: char.vocalDescription || null, // Include vocalDescription
               version: char.currentVersion,
               updatedAt: now,
               changes
             };
-            
+
             // Create the updated character
             updatedChar = {
               ...char,
@@ -126,30 +131,30 @@ export const useCharacterStore = create<StoreState>()(
                 newVersion
               ]
             };
-            
+
             return updatedChar;
           });
-          
+
           return { characters: updatedCharacters };
         });
-        
+
         return updatedChar;
       },
-      
+
       deleteCharacter: (id: string) => {
         set((state) => ({
           characters: state.characters.filter((char) => char.id !== id)
         }));
       },
-      
+
       setCurrentView: (view: View) => {
         set({ currentView: view });
       },
-      
+
       setEditingCharacterId: (id: string | null) => {
         set({ editingCharacterId: id });
       },
-      
+
       importCharacters: (newCharacters: Character | Character[]) => {
         const charactersArray = Array.isArray(newCharacters) ? newCharacters : [newCharacters];
         set((state) => ({
@@ -161,58 +166,60 @@ export const useCharacterStore = create<StoreState>()(
           ],
         }));
       },
-      
+
       getCharacterVersion: (characterId: string, version: number) => {
         const character = get().characters.find(c => c.id === characterId);
         if (!character) return null;
-        
+
         if (version === character.currentVersion) {
           // For the current version, create a CharacterVersion from the character
           const { id, createdAt, currentVersion, versions, ...currentState } = character;
           const versionData: CharacterVersion = {
             ...currentState,
+            vocalDescription: character.vocalDescription || null, // Include vocalDescription
             version: currentVersion,
             updatedAt: character.updatedAt,
             changes: ['Current version']
           };
           return versionData;
         }
-        
+
         // For previous versions, find the matching version
         return character.versions?.find(v => v.version === version) || null;
       },
-      
+
       getCharacterVersions: (characterId: string) => {
         const character = get().characters.find(c => c.id === characterId);
         if (!character) return [];
-        
+
         const currentVersion: CharacterVersion = (() => {
           const { id, currentVersion, versions, ...currentState } = character;
           return {
             ...currentState,
+            vocalDescription: character.vocalDescription || null, // Include vocalDescription
             version: currentVersion,
             updatedAt: character.updatedAt,
             changes: ['Current version']
           };
         })();
-        
+
         return [...(character.versions || []), currentVersion].sort((a, b) => b.version - a.version);
       },
-      
+
       restoreCharacterVersion: (characterId: string, version: number) => {
         const character = get().characters.find(c => c.id === characterId);
         if (!character) return null;
-        
+
         let versionToRestore: CharacterVersion | null = null;
-        
+
         if (version === character.currentVersion) {
           // Already at this version
           return character;
         }
-        
+
         versionToRestore = character.versions?.find(v => v.version === version) || null;
         if (!versionToRestore) return null;
-        
+
         // Create a new version with the restored state
         const now = new Date().toISOString();
         const restoredCharacter: Character = {
@@ -224,20 +231,21 @@ export const useCharacterStore = create<StoreState>()(
             ...(character.versions || []).slice(-(MAX_VERSIONS - 1)),
             {
               ...versionToRestore,
+              vocalDescription: versionToRestore.vocalDescription || null, // Include vocalDescription
               version: character.currentVersion + 1,
               updatedAt: now,
               changes: [`Restored from version ${version}`]
             }
           ]
         };
-        
+
         // Update the store
         set((state) => ({
-          characters: state.characters.map(c => 
+          characters: state.characters.map(c =>
             c.id === characterId ? restoredCharacter : c
           )
         }));
-        
+
         return restoredCharacter;
       },
 
