@@ -9,6 +9,7 @@ import ImportExportMenu from './ImportExportMenu';
 import PortraitManager from './PortraitManager';
 import VoiceManager from './VoiceManager';
 import CharacterFields from './CharacterFields';
+import { CharacterFormSchema } from '../schemas/validation';
 
 interface CharacterFormProps {
   initialCharacter: Character | null;
@@ -170,8 +171,11 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   };
 
   const handleSave = useCallback(async () => {
-    if (!character.name?.trim()) {
-      toast.error('Character name is required');
+    // Validate with Zod
+    const validation = CharacterFormSchema.safeParse(character);
+    if (!validation.success) {
+      const errorMessages = validation.error.errors.map(err => err.message).join(', ');
+      toast.error(`Validation errors: ${errorMessages}`);
       return;
     }
 

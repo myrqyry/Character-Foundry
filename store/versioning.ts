@@ -37,7 +37,7 @@ export function createVersionFromCharacter(char: Character, changes: string[]): 
   return {
     ...charData,
     vocalDescription: char.vocalDescription || null,
-    version: char.currentVersion + 1,
+    version: char.currentVersion,
     updatedAt: new Date().toISOString(),
     changes
   };
@@ -54,7 +54,7 @@ export function updateCharacterWithVersion(
     ...char,
     ...updates,
     vocalDescription: updates.vocalDescription ?? char.vocalDescription,
-    version: char.currentVersion + 1,
+    version: char.currentVersion,
     updatedAt: now,
     changes
   };

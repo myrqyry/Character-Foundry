@@ -85,4 +85,6 @@ export const CharacterFormSchema = z.object({
   backstory: z.string().optional(),
   genre: GenreSchema.optional(),
   vocalDescription: z.string().nullable().optional(),
+  portraitBase64: z.string().nullable().optional(),
+  voiceSampleBase64: z.string().nullable().optional(),
 });
