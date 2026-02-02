@@ -45,7 +45,7 @@ export interface TTSConfig {
 // const IMAGE_MODEL = 'gemini-2.0-flash-preview-image-generation';
 
 // Proxy server configuration
-const PROXY_BASE_URL = 'http://localhost:49152';
+const PROXY_BASE_URL = '';
 
 // Helper function to make secure API calls through proxy
 const callGeminiAPI = async <TRequest, TResponse>(
@@ -431,17 +431,12 @@ export const generatePortrait = async (
       model: imageModel
     });
 
-    if (!imageResult || !imageResult.imageUrl) {
-      const validation = ImageResponseSchema.safeParse({ data: null, error: 'No image URL in response from proxy' });
-      return validation.success ? validation.data : { data: null, error: 'No image URL in response from proxy' };
+    if (!imageResult || !imageResult.imageData) {
+      const validation = ImageResponseSchema.safeParse({ data: null, error: 'No image data in response from proxy' });
+      return validation.success ? validation.data : { data: null, error: 'No image data in response from proxy' };
     }
 
-    // Prepend the proxy base URL if the URL is relative
-    const imageUrl = imageResult.imageUrl.startsWith('/')
-      ? `${PROXY_BASE_URL}${imageResult.imageUrl}`
-      : imageResult.imageUrl;
-
-    const validation = ImageResponseSchema.safeParse({ data: imageUrl, error: null });
+    const validation = ImageResponseSchema.safeParse({ data: `data:image/png;base64,${imageResult.imageData}`, error: null });
     return validation.success ? validation.data : { data: null, error: 'Invalid image response' };
   } catch (error) {
     console.error('Error generating portrait with Gemini:', error);

@@ -73,7 +73,59 @@ the-character-foundry/
 └── package.json          # Node.js dependencies
 ```
 
-## Setup Instructions
+## Deployment to Vercel
+
+### Prerequisites
+- Vercel account (free tier available)
+- Google Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+
+### 1. Install Vercel CLI
+```bash
+npm install -g vercel
+```
+
+### 2. Deploy to Vercel
+```bash
+vercel
+```
+
+Follow the prompts:
+- Link to existing project or create new
+- Set project name (e.g., `character-foundry`)
+- Configure environment variables (see step 3)
+
+### 3. Configure Environment Variables
+In Vercel dashboard or CLI, set these environment variables:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+GOOGLE_TTS_API_KEY=your_gemini_api_key_here
+```
+
+**Important**: Never commit API keys to your repository. Always use environment variables.
+
+### 4. Update Build Settings (if needed)
+Vercel should automatically detect the configuration from `vercel.json`. The build settings are:
+- **Framework**: Vite
+- **Root Directory**: `./`
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+
+### 5. Access Your App
+After deployment, Vercel will provide a URL like `https://character-foundry.vercel.app`
+
+### API Routes
+The app uses Vercel serverless functions for backend APIs:
+- `/api/gemini/generate` - Text generation
+- `/api/imagen/generate` - Image generation  
+- `/api/tts/google` - Google TTS
+- `/api/tts/edge` - Edge TTS
+
+### Security Notes
+- API keys are stored securely in Vercel environment variables
+- Serverless functions run in isolated environments
+- CORS is configured to allow your frontend domain
+- No API keys are exposed in client-side code
 
 ### Prerequisites
 
@@ -132,6 +184,10 @@ python proxy.py
 ```bash
 pnpm dev
 ```
+
+### Alternative: Vercel Deployment (Production)
+
+For production deployment with API key protection, see the [Deployment to Vercel](#deployment-to-vercel) section below.
 
 ## Usage Instructions
 
