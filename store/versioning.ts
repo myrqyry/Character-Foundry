@@ -50,8 +50,9 @@ export function updateCharacterWithVersion(
   changes: string[]
 ): Character {
   const now = new Date().toISOString();
+  const { id, createdAt, currentVersion, versions, ...charData } = char;
   const newVersion: CharacterVersion = {
-    ...char,
+    ...charData,
     ...updates,
     vocalDescription: updates.vocalDescription ?? char.vocalDescription,
     version: char.currentVersion,
