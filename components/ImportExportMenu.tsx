@@ -42,7 +42,7 @@ const ImportExportMenu: React.FC<ImportExportMenuProps> = ({ character }) => {
             const charactersArray = Array.isArray(json) ? json : [json];
             
             // Validate items
-            const validCharacters: Character[] = [];
+            const validCharacters: Partial<Character>[] = [];
             let errors = 0;
 
             charactersArray.forEach(char => {

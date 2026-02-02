@@ -487,3 +487,5 @@ export const generateVocalDescription = async (
     return { data: null, error: error instanceof Error ? error.message : 'Failed to generate vocal description' };
   }
 };
+
+const validateTTSResponse = (response: TTSResponse) => TTSResponseSchema.safeParse(response);

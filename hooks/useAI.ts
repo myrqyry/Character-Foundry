@@ -4,10 +4,9 @@ import {
   fleshOutCharacter,
   generatePortrait,
   generateVocalDescription,
-  evolveCharacter,
-  textToSpeech
+  evolveCharacter
 } from '../services/geminiService';
-import { PartialCharacter } from '../types';
+import { PartialCharacter, Character } from '../types';
 import toast from 'react-hot-toast';
 
 // Query keys

@@ -51,12 +51,11 @@ export const useCharacterStore = create<StoreState>()(
 
       // Actions
       addCharacter: (characterData) => {
-        const now = new Date().toISOString();
         const newCharacter: Character = {
           ...characterData,
           id: uuidv4(),
-          createdAt: now,
-          updatedAt: now,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           currentVersion: 1,
           versions: []
         };
@@ -71,7 +70,6 @@ export const useCharacterStore = create<StoreState>()(
       },
 
       updateCharacter: (characterId: string, updates: Partial<Character>) => {
-        const now = new Date().toISOString();
         let updatedChar: Character | null = null;
 
         set((state) => {

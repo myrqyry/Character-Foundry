@@ -13,7 +13,7 @@ function App() {
   const { characters, currentView, editingCharacterId } = useCharacterStore();
   const { setCurrentView, setEditingCharacterId } = useCharacterActions();
   const [showOptionsModal, setShowOptionsModal] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   const handleCreateNew = () => {
     startTransition(() => {
