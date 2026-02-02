@@ -1,5 +1,5 @@
 import { PartialCharacter } from '../types';
-import { validateCharacterResponse, validateImageResponse, validateTTSResponse } from '../schemas/validation';
+import { CharacterResponseSchema, ImageResponseSchema, TTSResponseSchema } from '../schemas/validation';
 
 // Custom API Error class for better error handling
 export class APIError extends Error {
@@ -135,7 +135,7 @@ export const fleshOutCharacter = async (
       const fullCharacterData = JSON.parse(text) as PartialCharacter;
       
       // Validate the parsed data
-      const validation = validateCharacterResponse({
+      const validation = CharacterResponseSchema.safeParse({
         data: { 
           ...fullCharacterData,
           updatedAt: new Date().toISOString(),
@@ -290,11 +290,11 @@ async function textToSpeechGoogle(
     const audioBase64 = responseData.audioContent;
     
     if (!audioBase64) {
-      const validation = validateTTSResponse({ data: null, error: 'No audio content in response from Google TTS', provider: 'google' });
-      return validation.data!;
+      const validation = TTSResponseSchema.safeParse({ data: null, error: 'No audio content in response from Google TTS', provider: 'google' });
+      return validation.success ? validation.data : { data: null, error: 'No audio content in response from Google TTS', provider: 'google' };
     }
 
-    const validation = validateTTSResponse({ 
+    const validation = TTSResponseSchema.safeParse({ 
       data: `data:audio/mp3;base64,${audioBase64}`, 
       error: null,
       provider: 'google'
@@ -431,9 +431,9 @@ export const generatePortrait = async (
       model: imageModel
     });
 
-    // The proxy now returns a URL to the saved image
     if (!imageResult || !imageResult.imageUrl) {
-      return validateImageResponse({ data: null, error: 'No image URL in response from proxy' }).data!;
+      const validation = ImageResponseSchema.safeParse({ data: null, error: 'No image URL in response from proxy' });
+      return validation.success ? validation.data : { data: null, error: 'No image URL in response from proxy' };
     }
 
     // Prepend the proxy base URL if the URL is relative
@@ -441,7 +441,7 @@ export const generatePortrait = async (
       ? `${PROXY_BASE_URL}${imageResult.imageUrl}`
       : imageResult.imageUrl;
 
-    const validation = validateImageResponse({ data: imageUrl, error: null });
+    const validation = ImageResponseSchema.safeParse({ data: imageUrl, error: null });
     return validation.success ? validation.data : { data: null, error: 'Invalid image response' };
   } catch (error) {
     console.error('Error generating portrait with Gemini:', error);

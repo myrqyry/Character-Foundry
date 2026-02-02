@@ -1,8 +1,7 @@
 import React from 'react';
-import { InputField, TextareaField } from './CharacterForm'; // Assuming InputField and TextareaField are exported from CharacterForm
+import { InputField, TextareaField } from './FormInputs'; // Update import path
 import { UploadIcon } from './Icons';
 import characterTraits from '../character_traits.json';
-
 import GenreSelect from './GenreSelect';
 import { Genre } from '../types';
 import TagsInput from './TagsInput';

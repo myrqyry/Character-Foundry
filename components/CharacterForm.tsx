@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { Character, CharacterVersion, Genre, PartialCharacter } from '../types';
+import { Character, Genre, PartialCharacter } from '../types';
 import Button from './Button';
 import { ArrowLeftIcon, SparklesIcon, TrashIcon } from './Icons';
 import { useFleshOutCharacter, useGeneratePortrait, useGenerateVocalDescription, useEvolveCharacter, useAddCharacter, useUpdateCharacter, useDeleteCharacter } from '../hooks/useAI';
@@ -10,41 +10,20 @@ import PortraitManager from './PortraitManager';
 import VoiceManager from './VoiceManager';
 import CharacterFields from './CharacterFields';
 import { CharacterFormSchema } from '../schemas/validation';
+import { TextareaField } from './FormInputs'; // Fix circular dependency
 
 interface CharacterFormProps {
   initialCharacter: Character | null;
   onBack: () => void;
 }
 
-export const InputField: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label: string }> = ({ label, id, ...props }) => (
-  <div>
-    <label htmlFor={id} className="block text-sm font-medium text-indigo-300 mb-1">{label}</label>
-    <input id={id} {...props} className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
-  </div>
-);
-
-import PlayButton from './PlayButton'; // No-op change to trigger rebuild
-
-export const TextareaField: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
-  label: string;
-  onPlay?: () => void;
-  isPlaying?: boolean;
-}> = ({ label, id, onPlay, isPlaying, ...props }) => (
-  <div className="relative">
-    <label htmlFor={id} className="block text-sm font-medium text-indigo-300 mb-1">{label}</label>
-    <textarea id={id} {...props} rows={5} className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
-    {onPlay && (
-      <PlayButton onClick={onPlay} isPlaying={!!isPlaying} />
-    )}
-  </div>
-);
-
 const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack }) => {
-  // Destructure props with defaults to avoid undefined errors
   const safeInitialCharacter = initialCharacter || {};
   const [character, setCharacter] = useState<Partial<Character>>({});
   const [prompt, setPrompt] = useState('');
   const [showAudioModal, setShowAudioModal] = useState(false);
+  const [tempAudioFile, setTempAudioFile] = useState<File | null>(null); // State for audio file
+  
   const { genres } = useCharacterStore();
   const fleshOutMutation = useFleshOutCharacter();
   const generatePortraitMutation = useGeneratePortrait();
@@ -55,13 +34,21 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const deleteCharacterMutation = useDeleteCharacter();
 
   useEffect(() => {
-    // Initialize character state when initialCharacter changes
     setCharacter(safeInitialCharacter);
   }, [safeInitialCharacter]);
 
   useEffect(() => {
+    const handleAudioClipped = (event: Event) => {
+      const customEvent = event as CustomEvent<string>;
+      setCharacter(prev => ({ ...prev, voiceSampleBase64: customEvent.detail }));
+      setShowAudioModal(false);
+      setTempAudioFile(null);
+    };
+
+    // Listen on document to match the dispatch target
+    document.addEventListener('audioClipped', handleAudioClipped);
     return () => {
-      // Cleanup code if needed
+      document.removeEventListener('audioClipped', handleAudioClipped);
     };
   }, []);
 
@@ -88,28 +75,12 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
         };
         reader.readAsDataURL(file);
       } else {
-        // For audio, open the modal to allow clipping
+        setTempAudioFile(file);
         setShowAudioModal(true);
-        // Store the file temporarily to pass to the iframe
-        // This is a simplified approach; a more robust solution might use context or a global store
-        (window as any).currentAudioFile = file; 
+        e.target.value = ''; // Reset input
       }
     }
   };
-
-  useEffect(() => {
-    const handleAudioClipped = (event: Event) => {
-      const customEvent = event as CustomEvent<string>;
-      setCharacter(prev => ({ ...prev, voiceSampleBase64: customEvent.detail }));
-      setShowAudioModal(false);
-    };
-
-    window.addEventListener('audioClipped', handleAudioClipped);
-
-    return () => {
-      window.removeEventListener('audioClipped', handleAudioClipped);
-    };
-  }, []);
 
   const handleFleshOut = useCallback(async () => {
     fleshOutMutation.mutate(character as PartialCharacter, {
@@ -161,7 +132,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
             setCharacter(prev => ({
               ...prev,
               ...result.data,
-              name: result.data?.name || prev.name, // Ensure name is never undefined
+              name: result.data?.name || prev.name,
             }));
             setPrompt('');
           }
@@ -171,7 +142,6 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   };
 
   const handleSave = useCallback(async () => {
-    // Validate with Zod
     const validation = CharacterFormSchema.safeParse(character);
     if (!validation.success) {
       const errorMessages = validation.error.errors.map(err => err.message).join(', ');
@@ -179,7 +149,6 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
       return;
     }
 
-    const now = new Date().toISOString();
     const characterToSave: Omit<Character, 'id' | 'createdAt' | 'updatedAt' | 'currentVersion' | 'versions'> = {
       name: character.name || '',
       title: character.title || '',
@@ -198,29 +167,20 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     if (initialCharacter?.id) {
       updateCharacterMutation.mutate(
         { id: initialCharacter.id, updates: characterToSave },
-        {
-          onSuccess: () => {
-            onBack();
-          }
-        }
+        { onSuccess: () => onBack() }
       );
     } else {
       addCharacterMutation.mutate(characterToSave, {
-        onSuccess: () => {
-          onBack();
-        }
+        onSuccess: () => onBack()
       });
     }
   }, [character, initialCharacter, updateCharacterMutation, addCharacterMutation, onBack]);
 
   const handleDelete = useCallback(() => {
-    if (!initialCharacter?.id) return; // Use initialCharacter directly and check for id
-    
+    if (!initialCharacter?.id) return;
     if (window.confirm('Are you sure you want to delete this character? This cannot be undone.')) {
       deleteCharacterMutation.mutate(initialCharacter.id, {
-        onSuccess: () => {
-          onBack();
-        }
+        onSuccess: () => onBack()
       });
     }
   }, [initialCharacter, deleteCharacterMutation, onBack]);
@@ -239,10 +199,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
         <div className="flex space-x-4">
           <ImportExportMenu character={character} />
           {initialCharacter && (
-            <button 
-              onClick={handleDelete}
-              className="text-red-400 hover:text-red-200 transition"
-            >
+            <button onClick={handleDelete} className="text-red-400 hover:text-red-200 transition">
               <TrashIcon className="h-5 w-5" />
             </button>
           )}
@@ -286,7 +243,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
             name="prompt"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="e.g., 'Give the character a mysterious scar over their left eye', 'Make the backstory more tragic', 'They found a powerful artifact, describe it'"
+            placeholder="e.g., 'Give the character a mysterious scar over their left eye', 'Make the backstory more tragic'"
           />
           <div className="flex justify-end gap-4">
             <Button onClick={handleEvolveCharacter} variant="secondary" disabled={evolveCharacterMutation.isPending || !prompt}>
@@ -314,11 +271,9 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
               src="/audio_modal.html" 
               className="w-full h-full border-none"
               onLoad={(e) => {
-                // Pass the file to the iframe once it's loaded
                 const iframe = e.target as HTMLIFrameElement;
-                const fileInput = document.getElementById('audio-upload') as HTMLInputElement;
-                if (iframe.contentWindow && fileInput && fileInput.files && fileInput.files[0]) {
-                  iframe.contentWindow.postMessage({ type: 'audioFile', file: fileInput.files[0] }, '*');
+                if (iframe.contentWindow && tempAudioFile) {
+                  iframe.contentWindow.postMessage({ type: 'audioFile', file: tempAudioFile }, '*');
                 }
               }}
             ></iframe>
