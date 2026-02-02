@@ -18,7 +18,6 @@ interface CharacterFormProps {
 }
 
 const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack }) => {
-  const safeInitialCharacter = initialCharacter || {};
   const [character, setCharacter] = useState<Partial<Character>>({});
   const [prompt, setPrompt] = useState('');
   const [showAudioModal, setShowAudioModal] = useState(false);
@@ -34,8 +33,8 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const deleteCharacterMutation = useDeleteCharacter();
 
   useEffect(() => {
-    setCharacter(safeInitialCharacter);
-  }, [safeInitialCharacter]);
+    setCharacter(initialCharacter || {});
+  }, [initialCharacter]);
 
   useEffect(() => {
     const handleAudioClipped = (event: Event) => {
