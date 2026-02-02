@@ -1,5 +1,11 @@
 # The Character Foundry
 
+## 🚀 Live Demo
+
+**Try the app now:** [https://character-foundry.vercel.app](https://character-foundry.vercel.app)
+
+The Character Foundry is deployed on Vercel with secure API key management and serverless backend functions.
+
 ## Project Description
 
 The Character Foundry is a modern web application designed to help users create and manage detailed fictional characters using AI assistance. It leverages Google's Gemini API to generate rich character profiles, backstories, personality traits, and physical descriptions, streamlining the creative process for writers, game developers, and role-playing enthusiasts.
@@ -44,7 +50,7 @@ All changes maintain backward compatibility while providing access to the latest
   * Text Generation: `gemini-3-flash-preview`
   * Image Generation: `gemini-2.5-flash-image`
   * Text-to-Speech: `gemini-2.5-flash-tts`
-*   **Package Manager**: pnpm
+*   **Package Manager**: pnpm (development), npm (deployment)
 *   **Testing**: Vitest 3.2.4 + React Testing Library
 *   **Development Tools**: ESLint, TypeScript, Hot Module Replacement
 
