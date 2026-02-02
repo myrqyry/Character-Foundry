@@ -5,7 +5,7 @@ export default defineConfig(() => {
     return {
       build: {
         rollupOptions: {
-          external: ['react-hot-toast'],
+          // external: ['react-hot-toast'],
         },
       },
       resolve: {
