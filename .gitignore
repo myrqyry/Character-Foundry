@@ -263,3 +263,4 @@ temp/
 # pnpm-lock.yaml is kept for pnpm
 AGENTS.md
 repomix-output.md
+.env*.local
