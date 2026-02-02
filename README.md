@@ -39,7 +39,7 @@ All changes maintain backward compatibility while providing access to the latest
 *   **State Management**: Zustand 4.5.7 + TanStack Query 5.x
 *   **Backend**: Flask (Python proxy server)
 *   **Validation**: Zod
-*   **AI Integration**: Google Gemini API (@google/genai v1.39.0, @google/generative-ai v0.24.1)
+*   **AI Integration**: Google Gemini API (@google/genai v1.39.0)
 *   **Gemini Models**: 
   * Text Generation: `gemini-3-flash-preview`
   * Image Generation: `gemini-2.5-flash-image`
