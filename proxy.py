@@ -56,7 +56,7 @@ def gemini_generate():
     
     try:
         data = request.get_json()
-        model = data.get('model', 'gemini-2.0-flash-exp')
+        model = data.get('model', 'gemini-3-flash-preview')
         prompt = data.get('prompt')
         
         if not prompt:
@@ -138,7 +138,7 @@ def generate_image_imagen():
     if not api_key:
         return jsonify({'error': 'GEMINI_API_KEY not set'}), 500
 
-    model = 'gemini-2.0-flash-preview-image-generation' # Correct model for this task
+    model = 'gemini-2.5-flash-image' # Correct model for this task
     url = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}'
     headers = {'Content-Type': 'application/json'}
     payload = {
@@ -200,7 +200,7 @@ def google_tts():
         if not text:
             return jsonify({"error": "Text is required"}), 400
 
-        model = "gemini-2.5-flash-preview-tts"
+        model = "gemini-2.5-flash-tts"
         url = f"{GEMINI_API_ENDPOINT}/{model}:generateContent?key={GOOGLE_TTS_API_KEY}"
 
         payload = {

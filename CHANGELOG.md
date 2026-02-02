@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Gemini API Models Updated**:
+  - Text generation: `gemini-2.5-flash` → `gemini-3-flash-preview`
+  - Image generation: `gemini-2.0-flash-preview-image-generation` → `gemini-2.5-flash-image`
+  - Text-to-speech: `gemini-2.5-flash-preview-tts` → `gemini-2.5-flash-tts`
+- **Dependencies Updated**:
+  - @google/genai: ^1.10.0 → ^1.39.0
+- **Deprecation Compliance**: Migrated away from models scheduled for shutdown to ensure long-term compatibility
+
 ### Added
 - **Theme Support**: Added light/dark theme toggle with system preference detection
 - **Error Boundaries**: Comprehensive error handling with React Error Boundaries
@@ -18,22 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Theme Toggle Component**: UI component for switching between light and dark themes
 - **Validation Schemas**: Zod schemas for Character, Image, and TTS API responses
 - **Concurrent Development**: Added `pnpm start` script to run frontend and backend simultaneously
-
-### Changed
-- **Dependencies Updated**: All dependencies updated to latest stable versions
-  - React: 18.x → 19.2.4
-  - TypeScript: 5.x → 5.7.3
-  - Vite: 5.x → 6.4.1
-  - Tailwind CSS: 3.x → 3.4.19
-  - Google GenAI SDK: Updated to latest versions
-  - Zustand: 4.x → 4.5.7
-  - Added @tanstack/react-query, zod, and other modern libraries
-- **Package Manager**: Migrated from npm to pnpm for better performance
-- **Build Configuration**: Updated Vite config for modern React 19 features
-- **TypeScript Configuration**: Enhanced tsconfig.json with stricter settings
-- **State Management**: Improved Zustand store with better type safety
-- **Component Architecture**: Added proper error boundaries and context providers
-- **API Integration**: Enhanced Gemini service with better error handling and validation
 
 ### Fixed
 - **TypeScript Errors**: Resolved all compilation errors including missing vocalDescription fields

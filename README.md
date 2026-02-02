@@ -6,7 +6,16 @@ The Character Foundry is a modern web application designed to help users create 
 
 The application features a React-based frontend with TypeScript, a Flask backend proxy for API management, and comprehensive state management with Zustand and TanStack Query.
 
-## Key Features
+## Recent Updates
+
+### February 2026 - Gemini API Model Updates
+- **Text Generation**: Updated to `gemini-3-flash-preview` (latest model with improved performance)
+- **Image Generation**: Migrated to `gemini-2.5-flash-image` (GA model replacing deprecated versions)
+- **Text-to-Speech**: Updated to `gemini-2.5-flash-tts` (optimized low-latency model)
+- **SDK Updates**: Updated Google GenAI SDK to v1.39.0 for latest features and bug fixes
+- **Deprecation Compliance**: Removed usage of models scheduled for shutdown (e.g., `gemini-2.0-flash-preview-image-generation`)
+
+All changes maintain backward compatibility while providing access to the latest AI capabilities.
 
 *   **AI-Powered Character Generation**: Utilize the Gemini API to generate detailed character profiles, including names, backstories, personality traits, and physical descriptions.
 *   **Character Profile Management**: Create, edit, and organize multiple character profiles with version history.
@@ -30,7 +39,11 @@ The application features a React-based frontend with TypeScript, a Flask backend
 *   **State Management**: Zustand 4.5.7 + TanStack Query 5.x
 *   **Backend**: Flask (Python proxy server)
 *   **Validation**: Zod
-*   **AI Integration**: Google Gemini API (@google/genai, @google/generative-ai)
+*   **AI Integration**: Google Gemini API (@google/genai v1.39.0, @google/generative-ai v0.24.1)
+*   **Gemini Models**: 
+  * Text Generation: `gemini-3-flash-preview`
+  * Image Generation: `gemini-2.5-flash-image`
+  * Text-to-Speech: `gemini-2.5-flash-tts`
 *   **Package Manager**: pnpm
 *   **Testing**: Vitest 3.2.4 + React Testing Library
 *   **Development Tools**: ESLint, TypeScript, Hot Module Replacement

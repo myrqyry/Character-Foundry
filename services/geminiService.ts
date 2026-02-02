@@ -192,7 +192,7 @@ interface TTSResponse {
 const defaultTTSConfig: TTSConfig = {
   provider: 'google',
   google: {
-    voice: 'gemini-2.5-flash-preview-tts',
+    voice: 'gemini-2.5-flash-tts',
     languageCode: 'en-US',
     speakingRate: 1.0,
     pitch: 0.0
