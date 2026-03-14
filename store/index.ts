@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { v4 as uuidv4 } from 'uuid';
 import { Character, Genre, View, CharacterVersion } from '../types';
 import { getChanges, createVersionFromCharacter, updateCharacterWithVersion, restoreCharacterVersion } from './versioning';
 
@@ -53,7 +52,7 @@ export const useCharacterStore = create<StoreState>()(
       addCharacter: (characterData) => {
         const newCharacter: Character = {
           ...characterData,
-          id: uuidv4(),
+          id: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           currentVersion: 1,
