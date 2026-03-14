@@ -17,7 +17,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
   2. Observe `SyntaxError` in each listed `api/**` file.
 - **Proposed fix**:
   - Remove trailing artifact text (`</content>`, `<parameter ...>`).
-  - Add a CI Python syntax check (`python -m py_compile api/**/*.py` or equivalent script).
+  - Add a CI Python syntax check (`python -m compileall -q api` or equivalent script).
 - **Confidence**: High
 
 ### CF-002 — Lockfile drift breaks reproducible install
