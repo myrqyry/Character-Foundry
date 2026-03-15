@@ -43,6 +43,8 @@ GOOGLE_TTS_API_KEY=your_google_or_gemini_key_optional
 - `npm run test` – Vitest
 - `npm run typecheck` – TypeScript checks
 - `npm run check` – typecheck + tests
+- `npm run check:py` – Python API/proxy syntax check
+- `npm run check:foundation` – Python syntax check + frontend build
 
 ## API routes expected by frontend
 - `POST /api/gemini/generate`

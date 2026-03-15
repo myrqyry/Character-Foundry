@@ -6,6 +6,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-001 — Serverless Python handlers fail to parse
 - **Severity**: Critical
+- **Status**: Resolved in salvage pass 1 (python syntax check added and verified).
 - **Affected files**:
   - `api/gemini/generate.py`
   - `api/imagen/generate.py`
@@ -22,6 +23,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-002 — Lockfile drift breaks reproducible install
 - **Severity**: Critical
+- **Status**: In progress (install reproducibility still blocked; needs clean `npm ci` evidence).
 - **Affected files**:
   - `package.json`
   - `package-lock.json`
@@ -37,6 +39,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-003 — Build/test scripts are non-runnable in clean environment
 - **Severity**: High
+- **Status**: In progress (foundation command added, full JS checks still pending install health).
 - **Affected files**:
   - `package.json`
   - `package-lock.json`
@@ -50,6 +53,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-004 — Dual backend systems create architectural drift
 - **Severity**: High
+- **Status**: In progress (ownership and dual-runtime policy documented; full runtime consolidation pending).
 - **Affected files**:
   - `proxy.py`
   - `api/**`
@@ -68,6 +72,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-005 — README operational instructions are inaccurate
 - **Severity**: High
+- **Status**: In progress (major README corrections landed; keep aligning docs to verified commands only).
 - **Affected files**:
   - `README.md`
   - `package.json`
@@ -84,6 +89,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-006 — Changelog includes accidental artifact tail
 - **Severity**: Medium
+- **Status**: Resolved in salvage pass 1 (artifact tail removed from changelog).
 - **Affected files**:
   - `CHANGELOG.md`
 - **Why it matters**: Damages repo trust and indicates unsafe edit history handling.
@@ -96,6 +102,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-007 — Type safety regressions in critical input components
 - **Severity**: Medium
+- **Status**: Open (planned for next batch incremental typing pass).
 - **Affected files**:
   - `components/CharacterFields.tsx`
   - `components/CharacterForm.tsx`
@@ -109,6 +116,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-008 — Stale OpenWeatherMap proxy path is likely dead code
 - **Severity**: Medium
+- **Status**: Resolved earlier in salvage (legacy weather route/docs removed from active path).
 - **Affected files**:
   - `proxy.py`
   - `README.md`
@@ -122,6 +130,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-009 — Test coverage misses highest-risk systems
 - **Severity**: Medium
+- **Status**: Open (no new adapter/backend tests added yet).
 - **Affected files**:
   - `store/store.test.ts`
   - `services/geminiService.ts`
@@ -138,6 +147,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-010 — Stale/unclear repo artifacts add noise
 - **Severity**: Low
+- **Status**: Open (artifact/config cleanup not yet finalized).
 - **Affected files**:
   - `vercel.json.backup2`
   - `metadata.json`

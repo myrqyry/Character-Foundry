@@ -14,7 +14,9 @@
     "dev:api": "python proxy.py",
     "dev:full": "concurrently \"npm run dev\" \"npm run dev:api\"",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run test -- --run"
+    "check": "npm run typecheck && npm run test -- --run",
+    "check:py": "python -m compileall -q api proxy.py",
+    "check:foundation": "npm run check:py && npm run build"
   },
   "dependencies": {
     "@google/genai": "^1.39.0",
