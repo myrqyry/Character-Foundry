@@ -1,33 +1,79 @@
 import React from 'react';
-import { InputField, TextareaField } from './FormInputs'; // Update import path
+import { InputField, TextareaField } from './FormInputs';
 import { UploadIcon } from './Icons';
 import characterTraits from '../character_traits.json';
 import GenreSelect from './GenreSelect';
-import { Genre } from '../types';
+import { Character, Genre } from '../types';
 import TagsInput from './TagsInput';
 
+type FieldType = 'text' | 'color' | 'textarea' | 'genre' | 'select' | 'tags' | 'file';
+
+type CharacterFieldConfig = {
+  name: string;
+  type: FieldType;
+  label: string;
+  options?: string[];
+};
+
 interface CharacterFieldsProps {
-  character: any;
+  character: Partial<Character>;
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>, fileType: 'image' | 'audio') => void;
   handleGenreChange: (genre: Genre) => void;
   genres: Genre[];
 }
 
+const traitsConfig = characterTraits as {
+  characterTraits: Record<
+    string,
+    {
+      title: string;
+      description: string;
+      fields: CharacterFieldConfig[];
+    }
+  >;
+};
+
 const CharacterFields: React.FC<CharacterFieldsProps> = ({ character, handleChange, handleFileChange, handleGenreChange, genres }) => {
-  const renderField = (field: any) => {
+  const handleTagsChange = (name: string, values: string[]) => {
+    const syntheticEvent = {
+      target: {
+        name,
+        value: values,
+      },
+    } as unknown as React.ChangeEvent<HTMLInputElement>;
+
+    handleChange(syntheticEvent);
+  };
+
+  const renderField = (field: CharacterFieldConfig) => {
     const { name, type, label, options } = field;
-    const value = character[name] || '';
+    const rawValue = character[name as keyof Character];
 
     switch (type) {
       case 'text':
-      case 'color':
-        return <InputField key={name} label={label} id={name} name={name} type={type} value={value || '#000000'} onChange={handleChange} />;
-      case 'textarea':
+      case 'color': {
+        const value = typeof rawValue === 'string' ? rawValue : '';
+        return (
+          <InputField
+            key={name}
+            label={label}
+            id={name}
+            name={name}
+            type={type}
+            value={value || (type === 'color' ? '#000000' : '')}
+            onChange={handleChange}
+          />
+        );
+      }
+      case 'textarea': {
+        const value = typeof rawValue === 'string' ? rawValue : '';
         return <TextareaField key={name} label={label} id={name} name={name} value={value} onChange={handleChange} />;
+      }
       case 'genre':
         return <GenreSelect key={name} value={character.genre} onChange={handleGenreChange} genres={genres} />;
-      case 'select':
+      case 'select': {
+        const value = typeof rawValue === 'string' ? rawValue : '';
         return (
           <div key={name}>
             <label htmlFor={name} className="block text-sm font-medium text-indigo-300 mb-1">{label}</label>
@@ -38,14 +84,30 @@ const CharacterFields: React.FC<CharacterFieldsProps> = ({ character, handleChan
               onChange={handleChange}
               className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
             >
-              {options.map((option: string) => (
+              {(options ?? []).map((option) => (
                 <option key={option} value={option}>{option}</option>
               ))}
             </select>
           </div>
         );
-      case 'tags':
-        return <TagsInput key={name} label={label} name={name} value={Array.isArray(value) ? value : (value ? value.split(',').map((s: string) => s.trim()) : [])} onChange={(name, value) => handleChange({ target: { name, value } } as any)} />;
+      }
+      case 'tags': {
+        const value = Array.isArray(rawValue)
+          ? rawValue.map((item) => String(item))
+          : typeof rawValue === 'string'
+            ? rawValue.split(',').map((s) => s.trim()).filter(Boolean)
+            : [];
+
+        return (
+          <TagsInput
+            key={name}
+            label={label}
+            name={name}
+            value={value}
+            onChange={handleTagsChange}
+          />
+        );
+      }
       case 'file':
         return (
           <div key={name}>
@@ -68,12 +130,12 @@ const CharacterFields: React.FC<CharacterFieldsProps> = ({ character, handleChan
 
   return (
     <div className="md:col-span-2 space-y-4">
-      {Object.entries(characterTraits.characterTraits).map(([sectionKey, section]) => (
+      {Object.entries(traitsConfig.characterTraits).map(([sectionKey, section]) => (
         <div key={sectionKey} className="bg-gray-700 rounded-lg p-4">
           <h3 className="text-lg font-medium text-white mb-2">{section.title}</h3>
           <p className="text-sm text-gray-400 mb-4">{section.description}</p>
           <div className="space-y-4">
-            {section.fields.map(field => renderField(field))}
+            {section.fields.map((field) => renderField(field))}
           </div>
         </div>
       ))}

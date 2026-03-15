@@ -102,7 +102,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-007 — Type safety regressions in critical input components
 - **Severity**: Medium
-- **Status**: Open (planned for next batch incremental typing pass).
+- **Status**: In progress (initial `any` reduction completed in form components; broader typing cleanup remains).
 - **Affected files**:
   - `components/CharacterFields.tsx`
   - `components/CharacterForm.tsx`

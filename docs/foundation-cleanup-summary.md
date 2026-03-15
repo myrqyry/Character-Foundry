@@ -1,38 +1,41 @@
-# Foundation Cleanup Summary (Initial Pass)
+# Foundation Cleanup Summary (Salvage Pass 1)
 
-This summary records the first execution batch of Phase 1 from `docs/salvage-plan.md`.
+This document records concrete Phase 1/2 salvage actions completed in this pass and what remains blocked.
 
-## What changed
+## Completed changes
 
-## 1) Added baseline Python syntax gate
-- Added npm script: `check:py` → `python -m compileall -q api proxy.py`.
-- Why: audited syntax-corruption risk in API handlers must remain continuously detectable.
-- Audit/backlog mapping: **CF-001**.
+### 1) Foundation check scripts normalized in `package.json`
+- Added `check:py` (`python -m compileall -q api proxy.py`) to keep Python endpoint syntax regressions detectable.
+- Added `check:foundation` (`npm run check:py && npm run build`) as a single command for backend syntax + frontend build baseline.
+- Audit/backlog mapping: **CF-001**, **CF-003**.
 
-## 2) Added a grouped foundation check command
-- Added npm script: `check:foundation` → `npm run check:py && npm run build`.
-- Why: creates one command that validates backend syntax and frontend build together.
-- Audit/backlog mapping: **CF-003**.
+### 2) Documentation drift corrected
+- `README.md` scripts section updated to include the real verification commands (`check:py`, `check:foundation`).
+- `CHANGELOG.md` cleaned to remove accidental non-markdown tail artifact and stale `pnpm start` wording.
+- Audit/backlog mapping: **CF-005**, **CF-006**.
 
-## 3) Corrected changelog corruption + stale command reference
-- Removed accidental non-markdown tail from `CHANGELOG.md`.
-- Replaced misleading changelog entry text from `pnpm start` to `npm run dev:full`.
-- Why: reduce trust-breaking doc drift and inaccurate setup references.
-- Audit/backlog mapping: **CF-006**, **CF-005**.
+### 3) Type-safety friction reduced in form layer (incremental)
+- `components/CharacterFields.tsx` now uses explicit field config typing instead of `any`, typed character props (`Partial<Character>`), safer option handling, and a dedicated tags change adapter.
+- `components/CharacterForm.tsx` removed `any` usage in validation issue mapping and removed forced `handleFileChange as any` cast.
+- Audit/backlog mapping: **CF-007** (partial progress).
+
+### 4) Architecture normalization documentation added
+- Added explicit state/data ownership boundaries and temporary dual-runtime policy in `docs/state-ownership.md`.
+- Audit/backlog mapping: **CF-004**.
 
 ## Validation run in this pass
 - `python -m compileall -q api proxy.py` ✅ passed.
-- `npm run typecheck` ❌ failed in this environment due missing type packages in current local install state.
-- `npm ci` ⚠️ did not complete in this environment during this pass (appears environment/network/install-state constrained; no successful completion evidence yet).
+- `npm run check:py && npm run build` ❌ failed with `vite: not found` in current environment install state.
+- `npm run typecheck` ❌ failed with missing type definition packages in current environment install state.
+- `npm ci` ⚠️ did not complete successfully in this environment during this pass, so install reproducibility remains unproven here.
 
-## Risks still open after this pass
-- Reproducible clean install remains unproven here (**CF-002**).
-- Full frontend quality gates (typecheck/test/build chain) remain partially blocked by install health (**CF-003**).
+## Remaining risks
+- **CF-002** still open: clean `npm ci` evidence is missing.
+- **CF-003** still open: build/test/typecheck remain blocked by dependency install state.
+- **CF-007** only partially addressed: other form/service typing debt remains.
+- **CF-010** open: stale artifact cleanup is still pending.
 
-## Recommended immediate follow-up
-1. Re-run from a clean node_modules state and regenerate lockfile only if drift is confirmed.
-2. Capture fresh command evidence for:
-   - `npm ci`
-   - `npm run build`
-   - `npm run test -- --run`
-3. Update backlog statuses with evidence links after those checks pass/fail conclusively.
+## Next highest-value pass
+1. Resolve install determinism first (`npm ci` in clean environment) and refresh lockfile only if drift is confirmed.
+2. Re-run and capture baseline gates: `npm run build`, `npm run test -- --run`, `npm run typecheck`.
+3. Add focused adapter/backend contract tests for `/api/gemini/generate` path to start closing **CF-009**.

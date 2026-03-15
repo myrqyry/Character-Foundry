@@ -143,7 +143,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const handleSave = useCallback(async () => {
     const validation = CharacterFormSchema.safeParse(character);
     if (!validation.success) {
-      const errorMessages = validation.error.issues.map((err: any) => err.message).join(', ');
+      const errorMessages = validation.error.issues.map((err) => err.message).join(', ');
       toast.error(`Validation errors: ${errorMessages}`);
       return;
     }
@@ -226,7 +226,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
           <CharacterFields
             character={character}
             handleChange={handleChange}
-            handleFileChange={handleFileChange as any}
+            handleFileChange={handleFileChange}
             handleGenreChange={handleGenreChange}
             genres={genres}
           />

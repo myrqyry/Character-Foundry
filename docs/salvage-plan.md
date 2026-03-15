@@ -31,6 +31,8 @@ Principles for every phase:
    - Addresses: **CF-006**, **CF-005**.
 4. Added foundation cleanup execution summary (`docs/foundation-cleanup-summary.md`) so outcomes and blockers are explicit.  
    - Addresses: **CF-005** (documentation drift).
+5. Began incremental form typing cleanup by removing `any` usage in key editor components.  
+   - Addresses: **CF-007** (partial).
 
 ### Exit criteria
 - Commands for build/typecheck/test/python syntax are present and documented.
@@ -53,6 +55,8 @@ Principles for every phase:
    - request/orchestration layer (`hooks/**`, `services/**`),
    - transport/runtime backends (`proxy.py` and `api/**`).
 2. Documented backend strategy status as **temporary dual-runtime**, with a deliberate migration target (serverless-first, proxy retained only for local development until parity checks complete).
+   - Addresses: **CF-004**.
+3. Added state ownership boundaries in `docs/state-ownership.md` to define which layer owns persistence, request orchestration, and transport contracts.
    - Addresses: **CF-004**.
 
 ### Exit criteria
