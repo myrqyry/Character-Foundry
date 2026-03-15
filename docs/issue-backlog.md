@@ -53,7 +53,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-004 — Dual backend systems create architectural drift
 - **Severity**: High
-- **Status**: In progress (ownership and dual-runtime policy documented; full runtime consolidation pending).
+- **Status**: In progress (ownership policy documented and API base URL handling normalized; full runtime consolidation pending).
 - **Affected files**:
   - `proxy.py`
   - `api/**`
@@ -72,7 +72,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-005 — README operational instructions are inaccurate
 - **Severity**: High
-- **Status**: In progress (major README corrections landed; keep aligning docs to verified commands only).
+- **Status**: In progress (major README corrections landed, including API base URL guidance; keep aligning docs to verified commands only).
 - **Affected files**:
   - `README.md`
   - `package.json`

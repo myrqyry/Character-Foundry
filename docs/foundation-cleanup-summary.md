@@ -15,13 +15,18 @@ This document records concrete Phase 1/2 salvage actions completed in this pass 
 - Audit/backlog mapping: **CF-005**, **CF-006**.
 
 ### 3) Type-safety friction reduced in form layer (incremental)
-- `components/CharacterFields.tsx` now uses explicit field config typing instead of `any`, typed character props (`Partial<Character>`), safer option handling, and a dedicated tags change adapter.
-- `components/CharacterForm.tsx` removed `any` usage in validation issue mapping and removed forced `handleFileChange as any` cast.
+- `components/CharacterFields.tsx` now uses explicit field config typing instead of `any`, typed character props (`Partial<Character>`), safer option handling, and explicit `handleTagsChange` callback props.
+- `components/CharacterForm.tsx` removed `any` usage in validation issue mapping, removed forced `handleFileChange as any` cast, and now updates tag arrays through a typed callback.
 - Audit/backlog mapping: **CF-007** (partial progress).
 
 ### 4) Architecture normalization documentation added
 - Added explicit state/data ownership boundaries and temporary dual-runtime policy in `docs/state-ownership.md`.
 - Audit/backlog mapping: **CF-004**.
+
+### 5) API base URL handling normalized for local/prod parity
+- `services/geminiService.ts` now reads `VITE_API_BASE_URL` (fallback `''`) instead of hard-coding an empty proxy prefix.
+- `README.md` now documents `VITE_API_BASE_URL` for split-port local development with Flask proxy.
+- Audit/backlog mapping: **CF-004**, **CF-005**.
 
 ## Validation run in this pass
 - `python -m compileall -q api proxy.py` ✅ passed.

@@ -1,5 +1,6 @@
 import { PartialCharacter } from '../types';
 import { CharacterResponseSchema, ImageResponseSchema, TTSResponseSchema } from '../schemas/validation';
+import { useCharacterStore } from '../store';
 
 // Custom API Error class for better error handling
 export class APIError extends Error {
@@ -45,7 +46,7 @@ export interface TTSConfig {
 // const IMAGE_MODEL = 'gemini-2.0-flash-preview-image-generation';
 
 // Proxy server configuration
-const PROXY_BASE_URL = '';
+const PROXY_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 // Helper function to make secure API calls through proxy
 const callGeminiAPI = async <TRequest, TResponse>(
@@ -208,8 +209,6 @@ const defaultTTSConfig: TTSConfig = {
 /**
  * Convert text to speech using the specified provider
  */
-import { useCharacterStore } from '../store';
-
 export const textToSpeech = async (
   text: string,
   config: Partial<TTSConfig> = {}

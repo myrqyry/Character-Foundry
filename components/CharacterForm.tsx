@@ -63,6 +63,13 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     setCharacter(prev => ({ ...prev, genre }));
   };
 
+  const handleTagsChange = useCallback((name: string, values: string[]) => {
+    setCharacter((prev) => ({
+      ...prev,
+      [name]: values,
+    }));
+  }, []);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'image' | 'audio') => {
     const file = e.target.files?.[0];
     if (file) {
@@ -226,6 +233,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
           <CharacterFields
             character={character}
             handleChange={handleChange}
+            handleTagsChange={handleTagsChange}
             handleFileChange={handleFileChange}
             handleGenreChange={handleGenreChange}
             genres={genres}

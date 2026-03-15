@@ -31,8 +31,10 @@ Principles for every phase:
    - Addresses: **CF-006**, **CF-005**.
 4. Added foundation cleanup execution summary (`docs/foundation-cleanup-summary.md`) so outcomes and blockers are explicit.  
    - Addresses: **CF-005** (documentation drift).
-5. Began incremental form typing cleanup by removing `any` usage in key editor components.  
+5. Began incremental form typing cleanup by removing `any` usage in key editor components and adding explicit typed tag-change callbacks.  
    - Addresses: **CF-007** (partial).
+6. Normalized frontend API base URL handling with `VITE_API_BASE_URL` (fallback same-origin) to reduce local/prod request-path ambiguity.
+   - Addresses: **CF-004**, **CF-005**.
 
 ### Exit criteria
 - Commands for build/typecheck/test/python syntax are present and documented.

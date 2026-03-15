@@ -18,6 +18,7 @@ type CharacterFieldConfig = {
 interface CharacterFieldsProps {
   character: Partial<Character>;
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  handleTagsChange: (name: string, values: string[]) => void;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>, fileType: 'image' | 'audio') => void;
   handleGenreChange: (genre: Genre) => void;
   genres: Genre[];
@@ -34,18 +35,14 @@ const traitsConfig = characterTraits as {
   >;
 };
 
-const CharacterFields: React.FC<CharacterFieldsProps> = ({ character, handleChange, handleFileChange, handleGenreChange, genres }) => {
-  const handleTagsChange = (name: string, values: string[]) => {
-    const syntheticEvent = {
-      target: {
-        name,
-        value: values,
-      },
-    } as unknown as React.ChangeEvent<HTMLInputElement>;
-
-    handleChange(syntheticEvent);
-  };
-
+const CharacterFields: React.FC<CharacterFieldsProps> = ({
+  character,
+  handleChange,
+  handleTagsChange,
+  handleFileChange,
+  handleGenreChange,
+  genres,
+}) => {
   const renderField = (field: CharacterFieldConfig) => {
     const { name, type, label, options } = field;
     const rawValue = character[name as keyof Character];
