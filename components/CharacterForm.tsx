@@ -63,6 +63,13 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     setCharacter(prev => ({ ...prev, genre }));
   };
 
+  const handleTagsChange = useCallback((name: string, values: string[]) => {
+    setCharacter((prev) => ({
+      ...prev,
+      [name]: values,
+    }));
+  }, []);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'image' | 'audio') => {
     const file = e.target.files?.[0];
     if (file) {
@@ -143,7 +150,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const handleSave = useCallback(async () => {
     const validation = CharacterFormSchema.safeParse(character);
     if (!validation.success) {
-      const errorMessages = validation.error.issues.map((err: any) => err.message).join(', ');
+      const errorMessages = validation.error.issues.map((err) => err.message).join(', ');
       toast.error(`Validation errors: ${errorMessages}`);
       return;
     }
@@ -226,7 +233,8 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
           <CharacterFields
             character={character}
             handleChange={handleChange}
-            handleFileChange={handleFileChange as any}
+            handleTagsChange={handleTagsChange}
+            handleFileChange={handleFileChange}
             handleGenreChange={handleGenreChange}
             genres={genres}
           />

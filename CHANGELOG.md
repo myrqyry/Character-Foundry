@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Theme Provider**: Context-based theme management with localStorage persistence
 - **Theme Toggle Component**: UI component for switching between light and dark themes
 - **Validation Schemas**: Zod schemas for Character, Image, and TTS API responses
-- **Concurrent Development**: Added `pnpm start` script to run frontend and backend simultaneously
+- **Concurrent Development**: Added `npm run dev:full` script to run frontend and backend simultaneously
 
 ### Fixed
 - **TypeScript Errors**: Resolved all compilation errors including missing vocalDescription fields
@@ -58,5 +58,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Portrait and voice sample generation
 - Basic UI with React and Tailwind CSS
 - Flask backend proxy for API management
-- Local storage persistence</content>
-<parameter name="filePath">/home/myrqyry/MQR/theCharacterFoundry/CHANGELOG.md
+- Local storage persistence

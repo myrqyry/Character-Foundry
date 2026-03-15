@@ -30,9 +30,12 @@ Create `.env.local` (frontend usage) or `.env` (python usage) with:
 ```env
 GEMINI_API_KEY=your_gemini_api_key
 GOOGLE_TTS_API_KEY=your_google_or_gemini_key_optional
+VITE_API_BASE_URL=http://localhost:49152
 ```
 
 `GOOGLE_TTS_API_KEY` falls back to `GEMINI_API_KEY` in Python routes.
+
+`VITE_API_BASE_URL` is optional. Leave it unset for same-origin `/api/*` calls, or set it when running frontend and Flask proxy on different ports during local development.
 
 ## Scripts
 - `npm run dev` – run Vite frontend
@@ -43,6 +46,8 @@ GOOGLE_TTS_API_KEY=your_google_or_gemini_key_optional
 - `npm run test` – Vitest
 - `npm run typecheck` – TypeScript checks
 - `npm run check` – typecheck + tests
+- `npm run check:py` – Python API/proxy syntax check
+- `npm run check:foundation` – Python syntax check + frontend build
 
 ## API routes expected by frontend
 - `POST /api/gemini/generate`
