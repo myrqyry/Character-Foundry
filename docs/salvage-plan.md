@@ -11,6 +11,13 @@ Principles for every phase:
 - Link each meaningful change to a backlog issue.
 - Keep docs truthful to what is currently runnable.
 
+## Work completed in this pass (March 2026)
+- Removed stale config backups (`vercel.json.backup*`) to reduce ambiguity around the active deployment config.
+- Added a safe storage fallback in `store/index.ts` so tests and non-browser environments no longer log `localStorage` availability warnings.
+- Verified `npm ci`, `npm run build`, `npm test -- --run`, and `npm run check:py` all succeed cleanly.
+- Updated `docs/issue-backlog.md` to mark CF-002 and CF-003 as resolved.
+
+
 ## Phase 1: Foundation cleanup
 
 **Goal:** make install, startup, and baseline checks predictable.

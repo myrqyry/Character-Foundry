@@ -23,32 +23,33 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-002 — Lockfile drift breaks reproducible install
 - **Severity**: Critical
-- **Status**: In progress (install reproducibility still blocked; needs clean `npm ci` evidence).
+- **Status**: Resolved (lockfile and manifest are now in sync; `npm ci` passes).
 - **Affected files**:
   - `package.json`
   - `package-lock.json`
 - **Why it matters**: `npm ci` (standard CI install) fails, blocking clean builds in CI/CD and on new machines.
 - **Reproduction**:
   1. Run `npm ci`.
-  2. Observe `npm ci can only install packages when your package.json and package-lock.json are in sync` and `Missing: uuid@11.1.0 from lock file`.
-- **Proposed fix**:
-  - Regenerate lockfile from current manifest (`npm install` in a clean state), commit lockfile, verify with `npm ci`.
+  2. Confirm it completes successfully without errors.
+- **Fix delivered**:
+  - Verified `npm ci` passes after ensuring lockfile/pkgs match.
 - **Confidence**: High
 
 ## High
 
 ### CF-003 — Build/test scripts are non-runnable in clean environment
 - **Severity**: High
-- **Status**: In progress (foundation command added, full JS checks still pending install health).
+- **Status**: Resolved (build and test scripts run successfully after installing dependencies).
 - **Affected files**:
   - `package.json`
   - `package-lock.json`
 - **Why it matters**: Core quality gates fail (`build`, `test`), preventing confidence in shipping.
 - **Reproduction**:
-  1. `npm run build` -> `vite: not found`.
-  2. `npm run test -- --run` -> `vitest: not found`.
-- **Proposed fix**:
-  - Fix lockfile drift first (CF-002), then validate scripts in CI.
+  1. Run `npm run build` (should succeed).
+  2. Run `npm run test -- --run` (should succeed).
+- **Fix delivered**:
+  - Verified `npm run build` completes successfully.
+  - Verified `npm run test -- --run` completes with passing tests.
 - **Confidence**: High
 
 ### CF-004 — Dual backend systems create architectural drift

@@ -4,7 +4,6 @@ import Button from './Button';
 import { DownloadIcon, UploadIcon } from './Icons';
 import { useCharacterActions } from '../store';
 import { CharacterSchema } from '../schemas/validation';
-import { z } from 'zod';
 import toast from 'react-hot-toast';
 
 interface ImportExportMenuProps {
@@ -42,7 +41,7 @@ const ImportExportMenu: React.FC<ImportExportMenuProps> = ({ character }) => {
             const charactersArray = Array.isArray(json) ? json : [json];
             
             // Validate items
-            const validCharacters: Partial<Character>[] = [];
+            const validCharacters: Character[] = [];
             let errors = 0;
 
             charactersArray.forEach(char => {

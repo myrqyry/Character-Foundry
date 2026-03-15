@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { PartialCharacter } from '../types';
 import { CharacterResponseSchema, ImageResponseSchema, TTSResponseSchema } from '../schemas/validation';
 import { useCharacterStore } from '../store';
@@ -13,6 +14,8 @@ export class APIError extends Error {
     this.name = 'APIError';
   }
 }
+
+export type CharacterResponse = z.infer<typeof CharacterResponseSchema>;
 
 
 // Type for TTS configuration
@@ -49,10 +52,10 @@ export interface TTSConfig {
 const PROXY_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 // Helper function to make secure API calls through proxy
-const callGeminiAPI = async <TRequest, TResponse>(
-  endpoint: string, 
-  data: TRequest, 
-  retries = 3, 
+const callGeminiAPI = async <TRequest = any, TResponse = any>(
+  endpoint: string,
+  data: TRequest,
+  retries = 3,
   delay = 1000
 ): Promise<TResponse> => {
   for (let i = 0; i < retries; i++) {
@@ -97,11 +100,6 @@ const callGeminiAPI = async <TRequest, TResponse>(
   throw new APIError('Failed to call Gemini API after multiple retries.', undefined, 'NETWORK_ERROR');
 };
 
-interface CharacterResponse {
-  data: PartialCharacter | null;
-  error: string | null;
-}
-
 export const fleshOutCharacter = async (
   partialChar: PartialCharacter
 ): Promise<CharacterResponse> => {
@@ -133,24 +131,31 @@ export const fleshOutCharacter = async (
     
     // Attempt to parse the response as JSON
     try {
-      const fullCharacterData = JSON.parse(text) as PartialCharacter;
-      
+      const parsedData = JSON.parse(text) as any;
+
+      // Normalize to a full Character shape for validation.
+      // Some Gemini responses may omit required bookkeeping fields, so we synthesize them.
+      const now = new Date().toISOString();
+      const fullCharacterData: any = {
+        ...parsedData,
+        id: parsedData?.id || crypto.randomUUID?.() || `char-${now}`,
+        createdAt: parsedData?.createdAt || now,
+        updatedAt: now,
+        currentVersion: parsedData?.currentVersion || 1,
+        versions: parsedData?.versions || [],
+      };
+
       // Validate the parsed data
       const validation = CharacterResponseSchema.safeParse({
-        data: { 
-          ...fullCharacterData,
-          updatedAt: new Date().toISOString(),
-          currentVersion: 1,
-          versions: []
-        }, 
-        error: null 
+        data: fullCharacterData,
+        error: null
       });
-      
+
       if (!validation.success) {
         console.error('Validation error:', validation.error);
         return { data: null, error: 'Invalid character data structure' };
       }
-      
+
       return validation.data;
     } catch (parseError) {
       console.error('Error parsing character data:', parseError);
@@ -356,10 +361,15 @@ async function textToSpeechEdge(
   }
 }
 
+export interface EvolutionResponse {
+  data: PartialCharacter | null;
+  error: string | null;
+}
+
 export const evolveCharacter = async (
   character: PartialCharacter,
   prompt: string
-): Promise<CharacterResponse> => {
+): Promise<EvolutionResponse> => {
   try {
     const { textModel } = useCharacterStore.getState();
     const evolutionPrompt = `Given the following character and the user's evolution prompt, generate an updated character profile.\n\nCurrent Character: ${JSON.stringify(character)}\n\nEvolution Prompt: ${prompt}`;

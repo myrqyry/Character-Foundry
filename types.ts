@@ -3,16 +3,16 @@ export type Genre = 'High Fantasy' | 'Cyberpunk' | 'Post-Apocalyptic' | 'Slice o
 
 export interface CharacterVersion {
   name: string;
-  title: string;
-  synopsis: string;
-  personality: string;
-  flaws: string;
-  strengths: string;
-  appearance: string;
-  backstory: string;
-  portraitBase64: string | null;
-  voiceSampleBase64: string | null;
-  vocalDescription: string | null;
+  title?: string;
+  synopsis?: string;
+  personality?: string;
+  flaws?: string;
+  strengths?: string;
+  appearance?: string;
+  backstory?: string;
+  portraitBase64?: string | null;
+  voiceSampleBase64?: string | null;
+  vocalDescription?: string | null;
   genre?: Genre;
   version: number;
   updatedAt: string;
@@ -22,16 +22,16 @@ export interface CharacterVersion {
 export interface Character {
   id: string;
   name: string;
-  title: string;
-  synopsis: string;
-  personality: string;
-  flaws: string;
-  strengths: string;
-  appearance: string;
-  backstory: string;
-  portraitBase64: string | null;
-  voiceSampleBase64: string | null;
-  vocalDescription: string | null;
+  title?: string;
+  synopsis?: string;
+  personality?: string;
+  flaws?: string;
+  strengths?: string;
+  appearance?: string;
+  backstory?: string;
+  portraitBase64?: string | null;
+  voiceSampleBase64?: string | null;
+  vocalDescription?: string | null;
   createdAt: string;
   updatedAt: string;
   currentVersion: number;
@@ -39,7 +39,7 @@ export interface Character {
   genre?: Genre;
 }
 
-export type PartialCharacter = Omit<Character, 'id' | 'createdAt'>;
+export type PartialCharacter = Partial<Omit<Character, 'id' | 'createdAt'>>;
 
 export enum View {
   Dashboard,

@@ -165,7 +165,23 @@ export const useCharacterStore = create<StoreState>()(
     }),
     {
       name: 'character-storage',
-      storage: createJSONStorage(() => localStorage),
+      // Use safe storage to avoid errors in non-browser environments (Vitest, SSR, etc.).
+      storage: createJSONStorage(() => {
+        if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
+          // Fallback to in-memory storage in environments without localStorage
+          const memoryStorage: Record<string, string> = {};
+          return {
+            getItem: (key: string) => memoryStorage[key] ?? null,
+            setItem: (key: string, value: string) => {
+              memoryStorage[key] = value;
+            },
+            removeItem: (key: string) => {
+              delete memoryStorage[key];
+            },
+          };
+        }
+        return window.localStorage;
+      }),
       partialize: (state) => ({
         characters: state.characters,
         genres: state.genres,

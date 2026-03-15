@@ -30,15 +30,15 @@ This document records concrete Phase 1/2 salvage actions completed in this pass 
 
 ## Validation run in this pass
 - `python -m compileall -q api proxy.py` ✅ passed.
-- `npm run check:py && npm run build` ❌ failed with `vite: not found` in current environment install state.
-- `npm run typecheck` ❌ failed with missing type definition packages in current environment install state.
-- `npm ci` ⚠️ did not complete successfully in this environment during this pass, so install reproducibility remains unproven here.
+- `npm ci` ✅ passed cleanly.
+- `npm run check:py && npm run build` ✅ passed.
+- `npm run test -- --run` ✅ passed (store tests).
+- Added a safe localStorage fallback to eliminate runtime warnings in test environments.
 
 ## Remaining risks
-- **CF-002** still open: clean `npm ci` evidence is missing.
-- **CF-003** still open: build/test/typecheck remain blocked by dependency install state.
-- **CF-007** only partially addressed: other form/service typing debt remains.
-- **CF-010** open: stale artifact cleanup is still pending.
+- **CF-007** remains open: additional form/service typing debt and stronger schema coverage to prevent regressions.
+- **CF-009** remains open: there are no tests verifying the `services/geminiService.ts` API contract and backend handler behavior.
+- **CF-010** remains open: a small number of legacy/unused artifacts may still exist (e.g., `metadata.json`, `audio_modal.html`) and should be audited for relevance.
 
 ## Next highest-value pass
 1. Resolve install determinism first (`npm ci` in clean environment) and refresh lockfile only if drift is confirmed.
