@@ -1,0 +1,17 @@
+[project]
+name = "the-character-foundry"
+version = "0.0.0"
+description = "The Character Foundry backend services"
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+  "flask",
+  "python-dotenv",
+  "requests",
+  "edge-tts"
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"

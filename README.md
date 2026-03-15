@@ -22,7 +22,17 @@ This repository is being stabilized in-place with an incremental salvage plan. C
 ## Prerequisites
 - Node.js 18+
 - Python 3.8+
-- `pip install -r requirements.txt`
+- **pnpm** (preferred; repo includes pnpm lockfile)
+- **uv** for Python dependency management
+
+## Setup (recommended)
+Run these from the repo root:
+
+```bash
+pnpm install
+uv venv
+uv pip install -r requirements.txt
+```
 
 ## Environment variables
 Create `.env.local` (frontend usage) or `.env` (python usage) with:
