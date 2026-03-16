@@ -13,6 +13,16 @@ import {
   useDeleteCharacter,
   useIndexCharacterLore
 } from '../hooks/useAI';
+import { 
+  useFleshOutCharacter, 
+  useGeneratePortrait, 
+  useGenerateVocalDescription, 
+  useEvolveCharacter, 
+  useAddCharacter, 
+  useUpdateCharacter, 
+  useDeleteCharacter,
+  useIndexCharacterLore
+} from '../hooks/useAI';
 import { useCharacterStore } from '../store';
 import ImportExportMenu from './ImportExportMenu';
 import PortraitManager from './PortraitManager';
@@ -40,6 +50,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const addCharacterMutation = useAddCharacter();
   const updateCharacterMutation = useUpdateCharacter();
   const deleteCharacterMutation = useDeleteCharacter();
+  const indexLoreMutation = useIndexCharacterLore();
   const indexLoreMutation = useIndexCharacterLore();
 
   useEffect(() => {
@@ -133,6 +144,10 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     });
   }, [character.voiceSampleBase64, generateVocalDescriptionMutation]);
 
+  const handleTranscriptChange = (text: string) => {
+    setCharacter(prev => ({ ...prev, voiceSampleTranscript: text }));
+  };
+
   const handleTranscriptChange = useCallback((text: string) => {
     setCharacter(prev => ({ ...prev, voiceSampleTranscript: text }));
   }, []);
@@ -180,6 +195,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
       portraitBase64: character.portraitBase64 || null,
       voiceSampleBase64: character.voiceSampleBase64 || null,
       voiceSampleTranscript: character.voiceSampleTranscript || null,
+      voiceSampleTranscript: character.voiceSampleTranscript || null,
       vocalDescription: character.vocalDescription || null,
       genre: character.genre
     };
@@ -187,6 +203,14 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     if (initialCharacter?.id) {
       updateCharacterMutation.mutate(
         { id: initialCharacter.id, updates: characterToSave },
+        { 
+          onSuccess: (updatedChar) => {
+            if (updatedChar) {
+              indexLoreMutation.mutate(updatedChar);
+            }
+            onBack();
+          } 
+        }
         { 
           onSuccess: (updatedChar) => {
             if (updatedChar) {
@@ -204,8 +228,15 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
           }
           onBack();
         }
+        onSuccess: (newChar) => {
+          if (newChar) {
+            indexLoreMutation.mutate(newChar);
+          }
+          onBack();
+        }
       });
     }
+  }, [character, initialCharacter, updateCharacterMutation, addCharacterMutation, indexLoreMutation, onBack]);
   }, [character, initialCharacter, updateCharacterMutation, addCharacterMutation, indexLoreMutation, onBack]);
 
   const handleDelete = useCallback(() => {
@@ -250,9 +281,11 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
           <VoiceManager
             voiceSampleBase64={character.voiceSampleBase64 || undefined}
             voiceSampleTranscript={character.voiceSampleTranscript}
+            voiceSampleTranscript={character.voiceSampleTranscript}
             isAiLoading={generateVocalDescriptionMutation.isPending}
             handleFileChange={handleFileChange}
             handleGenerateVocalDescription={handleGenerateVocalDescription}
+            handleTranscriptChange={handleTranscriptChange}
             handleTranscriptChange={handleTranscriptChange}
           />
         </div>
