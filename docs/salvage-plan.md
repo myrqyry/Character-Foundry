@@ -11,11 +11,14 @@ Principles for every phase:
 - Link each meaningful change to a backlog issue.
 - Keep docs truthful to what is currently runnable.
 
-## Work completed in this pass (March 2026)
-- Removed stale config backups (`vercel.json.backup*`) to reduce ambiguity around the active deployment config.
-- Added a safe storage fallback in `store/index.ts` so tests and non-browser environments no longer log `localStorage` availability warnings.
-- Verified `npm ci`, `npm run build`, `npm test -- --run`, and `npm run check:py` all succeed cleanly.
-- Updated `docs/issue-backlog.md` to mark CF-002 and CF-003 as resolved.
+## Work completed in this pass (March 2026 - Pass 3)
+- Fixed a bug in store versioning where `vocalDescription` couldn't be set to `null` due to improper nullish coalescing usage.
+- Fixed a bug in `fleshOutCharacter` that would generate a new ID even for existing characters, potentially breaking character history.
+- Cleaned up `hooks/useAI.ts` and `CharacterForm.tsx` to remove significant type ambiguity and unsafe casts.
+- Removed stale `metadata.json` and updated `tailwind.config.js` to match the actual project structure.
+- Stabilized the vertical slice: Character Edit → AI Flesh Out → Save → Versioning is now reliable and verified by unit tests.
+- Verified that `pnpm run build`, `pnpm run test`, and `pnpm run check:py` all succeed.
+- Updated `docs/issue-backlog.md` to mark CF-009 and CF-010 as resolved.
 
 
 ## Phase 1: Foundation cleanup

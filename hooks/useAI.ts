@@ -6,7 +6,7 @@ import {
   generateVocalDescription,
   evolveCharacter
 } from '../services/geminiService';
-import { PartialCharacter, Character } from '../types';
+import { Character } from '../types';
 import toast from 'react-hot-toast';
 
 // Query keys
@@ -23,7 +23,7 @@ export const useFleshOutCharacter = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (character: PartialCharacter) => fleshOutCharacter(character),
+    mutationFn: (character: Partial<Character>) => fleshOutCharacter(character),
     onSuccess: (result) => {
       if (result.data) {
         // Invalidate and refetch character data if needed
@@ -43,7 +43,7 @@ export const useFleshOutCharacter = () => {
 // Generate portrait mutation
 export const useGeneratePortrait = () => {
   return useMutation({
-    mutationFn: (character: PartialCharacter) => generatePortrait(character),
+    mutationFn: (character: Partial<Character>) => generatePortrait(character),
     onSuccess: (result) => {
       if (result.data) {
         toast.success('Portrait generated successfully!');
@@ -81,7 +81,7 @@ export const useEvolveCharacter = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ character, prompt }: { character: PartialCharacter; prompt: string }) =>
+    mutationFn: ({ character, prompt }: { character: Partial<Character>; prompt: string }) =>
       evolveCharacter(character, prompt),
     onSuccess: (result) => {
       if (result.data) {

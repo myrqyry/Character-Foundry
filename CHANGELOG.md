@@ -10,11 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Gemini API Models Updated**:
   - Text generation: `gemini-2.5-flash` → `gemini-3-flash-preview`
-  - Image generation: `gemini-2.0-flash-preview-image-generation` → `gemini-2.5-flash-image`
-  - Text-to-speech: `gemini-2.5-flash-preview-tts` → `gemini-2.5-flash-tts`
+  - Image generation: `gemini-2.5-flash-image` → `gemini-3.1-flash-image-preview` (Nano Banana 2)
+  - Text-to-speech: `gemini-2.5-flash-tts` → `gemini-2.5-flash-preview-tts`
 - **Dependencies Updated**:
-  - @google/genai: ^1.10.0 → ^1.39.0
-- **Deprecation Compliance**: Migrated away from models scheduled for shutdown to ensure long-term compatibility
+  - @google/genai: ^1.10.0 → ^1.45.0
+- **TTS Configuration**: Migrated Google TTS to use native `speechConfig` and `responseModalities=["AUDIO"]` for higher quality and controllable performances.
 
 ### Added
 - **Theme Support**: Added light/dark theme toggle with system preference detection

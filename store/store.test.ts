@@ -227,4 +227,25 @@ describe('Character Store', () => {
     // New character should be added
     expect(state.characters.find(c => c.id === 'new-id')?.name).toBe('New Character');
   });
+
+  it('should handle vocalDescription updates and versioning', () => {
+    const store = useCharacterStore.getState();
+    const character = createTestCharacter({ vocalDescription: 'Initial voice' });
+    store.characters = [character];
+
+    // Update something else, vocalDescription should persist in version
+    store.updateCharacter(character.id, { name: 'Updated Name' });
+    
+    let state = useCharacterStore.getState();
+    let updatedChar = state.characters[0];
+    expect(updatedChar.vocalDescription).toBe('Initial voice');
+    expect(updatedChar.versions[0].vocalDescription).toBe('Initial voice');
+
+    // Update vocalDescription to null
+    store.updateCharacter(character.id, { vocalDescription: null });
+    state = useCharacterStore.getState();
+    updatedChar = state.characters[0];
+    expect(updatedChar.vocalDescription).toBeNull();
+    expect(updatedChar.versions[1].vocalDescription).toBeNull();
+  });
 });

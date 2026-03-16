@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { Character, Genre, PartialCharacter } from '../types';
+import { Character, Genre } from '../types';
 import Button from './Button';
 import { ArrowLeftIcon, SparklesIcon, TrashIcon } from './Icons';
 import { useFleshOutCharacter, useGeneratePortrait, useGenerateVocalDescription, useEvolveCharacter, useAddCharacter, useUpdateCharacter, useDeleteCharacter } from '../hooks/useAI';
@@ -10,7 +10,7 @@ import PortraitManager from './PortraitManager';
 import VoiceManager from './VoiceManager';
 import CharacterFields from './CharacterFields';
 import { CharacterFormSchema } from '../schemas/validation';
-import { TextareaField } from './FormInputs'; // Fix circular dependency
+import { TextareaField } from './FormInputs';
 
 interface CharacterFormProps {
   initialCharacter: Character | null;
@@ -44,7 +44,6 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
       setTempAudioFile(null);
     };
 
-    // Listen on document to match the dispatch target
     document.addEventListener('audioClipped', handleAudioClipped);
     return () => {
       document.removeEventListener('audioClipped', handleAudioClipped);
@@ -89,7 +88,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   };
 
   const handleFleshOut = useCallback(async () => {
-    fleshOutMutation.mutate(character as PartialCharacter, {
+    fleshOutMutation.mutate(character, {
       onSuccess: (result) => {
         if (result.data) {
           setCharacter(prev => ({...prev, ...result.data}));
@@ -101,7 +100,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const handleGeneratePortrait = useCallback(async () => {
     if (!character) return;
     
-    generatePortraitMutation.mutate(character as PartialCharacter, {
+    generatePortraitMutation.mutate(character, {
       onSuccess: (result) => {
         if (result.data) {
           setCharacter(prev => ({ ...prev, portraitBase64: result.data }));
@@ -131,7 +130,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     }
 
     evolveCharacterMutation.mutate(
-      { character: character as Character, prompt },
+      { character, prompt },
       {
         onSuccess: (result) => {
           if (result.data) {

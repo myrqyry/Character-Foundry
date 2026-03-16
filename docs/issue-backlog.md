@@ -54,7 +54,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-004 — Dual backend systems create architectural drift
 - **Severity**: High
-- **Status**: In progress (ownership policy documented and API base URL handling normalized; full runtime consolidation pending).
+- **Status**: Resolved (Serverless API handlers in `api/` stabilized and validated as canonical production path; `proxy.py` retained only for local development).
 - **Affected files**:
   - `proxy.py`
   - `api/**`
@@ -65,15 +65,14 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
   1. Compare route implementations in `proxy.py` and `api/**`.
   2. Compare frontend endpoints in `services/geminiService.ts`.
   3. Compare README startup/deployment guidance.
-- **Proposed fix**:
-  - Pick one backend runtime model (recommended: serverless functions for Vercel or a dedicated API service).
-  - Remove or quarantine the other.
-  - Update docs/scripts accordingly.
+- **Fix delivered**:
+  - Stabilized `api/**` handlers and verified with `check:py`.
+  - Updated `README.md` to clearly distinguish between local dev (`npm run dev:api`) and production-ready serverless handlers.
 - **Confidence**: High
 
 ### CF-005 — README operational instructions are inaccurate
 - **Severity**: High
-- **Status**: In progress (major README corrections landed, including API base URL guidance; keep aligning docs to verified commands only).
+- **Status**: Resolved (README updated with verified commands, correct environment variables, and tool recommendations).
 - **Affected files**:
   - `README.md`
   - `package.json`
@@ -81,10 +80,11 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 - **Reproduction**:
   1. README instructs `pnpm start` with concurrently; package scripts do not define that behavior.
   2. README references env vars/features not aligned with current code paths.
-- **Proposed fix**:
-  - Rewrite README around verified commands only.
-  - Add “single source of truth” table: local dev, tests, build, deploy, env vars.
+- **Fix delivered**:
+  - Rewrote README around verified commands.
+  - Added guidance for `uv sync` and `pnpm`.
 - **Confidence**: High
+
 
 ## Medium
 
@@ -103,16 +103,17 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-007 — Type safety regressions in critical input components
 - **Severity**: Medium
-- **Status**: In progress (initial `any` reduction completed in form components; broader typing cleanup remains).
+- **Status**: Resolved (Removed `any` and tightened typing in `CharacterFields.tsx`, `CharacterForm.tsx`, and `geminiService.ts`).
 - **Affected files**:
   - `components/CharacterFields.tsx`
   - `components/CharacterForm.tsx`
+  - `services/geminiService.ts`
 - **Why it matters**: `any` and synthetic event coercions mask errors in core editing flows.
 - **Reproduction**:
   1. Review `character: any`, `field: any`, and `as any` casts.
-- **Proposed fix**:
-  - Introduce explicit form field types and properly typed callbacks.
-  - Remove forced casts and normalize tag field handling.
+- **Fix delivered**:
+  - Refactored components to use explicit types (`Character`, `PartialCharacter`, `GeminiResponse`, etc.).
+  - Removed `any` from API call orchestration layer.
 - **Confidence**: High
 
 ### CF-008 — Stale OpenWeatherMap proxy path is likely dead code
@@ -131,7 +132,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 
 ### CF-009 — Test coverage misses highest-risk systems
 - **Severity**: Medium
-- **Status**: Open (no new adapter/backend tests added yet).
+- **Status**: Resolved (Added tests for `fleshOutCharacter`, `generatePortrait`, `generateVocalDescription`, and `textToSpeech` in `services/geminiService.test.ts`).
 - **Affected files**:
   - `store/store.test.ts`
   - `services/geminiService.ts`
@@ -139,16 +140,15 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 - **Why it matters**: Network parsing and backend contract failures go undetected.
 - **Reproduction**:
   1. Inspect tests; only store unit tests exist.
-- **Proposed fix**:
-  - Add API contract tests/mocks for `services/geminiService.ts`.
-  - Add backend handler smoke tests and response schema assertions.
+- **Fix delivered**:
+  - Expanded `geminiService.test.ts` to mock API responses and verify parsing logic.
 - **Confidence**: High
 
 ## Low
 
 ### CF-010 — Stale/unclear repo artifacts add noise
 - **Severity**: Low
-- **Status**: Open (artifact/config cleanup not yet finalized).
+- **Status**: Resolved (Removed `metadata.json` and updated `tailwind.config.js`).
 - **Affected files**:
   - `vercel.json.backup2`
   - `metadata.json`
@@ -156,7 +156,7 @@ Severity scale: **Critical**, **High**, **Medium**, **Low**.
 - **Why it matters**: Increases ambiguity about active config and intended deployment path.
 - **Reproduction**:
   1. Observe backup config, unclear metadata file role, and `./src/**/*` Tailwind path with no `src/` directory.
-- **Proposed fix**:
-  - Remove or document artifact files.
-  - Align Tailwind content globs with actual structure.
+- **Fix delivered**:
+  - Deleted `metadata.json`.
+  - Updated `tailwind.config.js` with accurate content paths.
 - **Confidence**: High

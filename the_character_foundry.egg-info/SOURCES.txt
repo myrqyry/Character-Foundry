@@ -1,0 +1,8 @@
+README.md
+proxy.py
+pyproject.toml
+the_character_foundry.egg-info/PKG-INFO
+the_character_foundry.egg-info/SOURCES.txt
+the_character_foundry.egg-info/dependency_links.txt
+the_character_foundry.egg-info/requires.txt
+the_character_foundry.egg-info/top_level.txt

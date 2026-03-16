@@ -46,11 +46,11 @@ const CharacterFields: React.FC<CharacterFieldsProps> = ({
   const renderField = (field: CharacterFieldConfig) => {
     const { name, type, label, options } = field;
     const rawValue = character[name as keyof Character];
+    const value = typeof rawValue === 'string' ? rawValue : '';
 
     switch (type) {
       case 'text':
       case 'color': {
-        const value = typeof rawValue === 'string' ? rawValue : '';
         return (
           <InputField
             key={name}
@@ -64,7 +64,6 @@ const CharacterFields: React.FC<CharacterFieldsProps> = ({
         );
       }
       case 'textarea': {
-        const value = typeof rawValue === 'string' ? rawValue : '';
         return <TextareaField key={name} label={label} id={name} name={name} value={value} onChange={handleChange} />;
       }
       case 'genre':

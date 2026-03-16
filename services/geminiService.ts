@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PartialCharacter } from '../types';
+import { Character, PartialCharacter } from '../types';
 import { CharacterResponseSchema, ImageResponseSchema, TTSResponseSchema } from '../schemas/validation';
 import { useCharacterStore } from '../store';
 
@@ -17,9 +17,6 @@ export class APIError extends Error {
 
 export type CharacterResponse = z.infer<typeof CharacterResponseSchema>;
 
-
-// Type for TTS configuration
-
 // Types for TTS configuration
 type TTSProvider = 'google' | 'edge';
 
@@ -32,27 +29,35 @@ export interface TTSConfig {
     pitch?: number;
   };
   edge?: {
-    voice?: string;  // Can be any Voice.Name, Voice.ShortName, or Voice.FriendlyName
-    rate?: string;   // e.g. '+50%' for 50% faster, '-50%' for 50% slower
-    pitch?: string;  // e.g. '+50Hz' for higher pitch, '-50Hz' for lower pitch
-    volume?: string; // e.g. '+50%' for 50% louder, '-50%' for 50% quieter
+    voice?: string;
+    rate?: string;
+    pitch?: string;
+    volume?: string;
   };
 }
-
-// Removed unused interfaces VoiceConfig and AudioConfig
-
-
-
-// Model configurations
-// These are now dynamically loaded from the store
-// const TEXT_MODEL = 'gemini-2.5-flash';
-// const IMAGE_MODEL = 'gemini-2.0-flash-preview-image-generation';
 
 // Proxy server configuration
 const PROXY_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
+interface GeminiContent {
+  parts: { text?: string; inlineData?: { mimeType: string; data: string } }[];
+}
+
+interface GeminiCandidate {
+  content: GeminiContent;
+}
+
+interface GeminiResponse {
+  candidates: GeminiCandidate[];
+}
+
+interface ImagenProxyResponse {
+  imageData: string;
+  mimeType: string;
+}
+
 // Helper function to make secure API calls through proxy
-const callGeminiAPI = async <TRequest = any, TResponse = any>(
+const callGeminiAPI = async <TRequest, TResponse>(
   endpoint: string,
   data: TRequest,
   retries = 3,
@@ -101,13 +106,13 @@ const callGeminiAPI = async <TRequest = any, TResponse = any>(
 };
 
 export const fleshOutCharacter = async (
-  partialChar: PartialCharacter
+  partialChar: Partial<Character>
 ): Promise<CharacterResponse> => {
   try {
     const { textModel } = useCharacterStore.getState();
     const prompt = `Given the following partial character data, generate a complete character profile. Fill in any missing details to make the character rich and engaging. Return the character data as a JSON object. Do not include any markdown code block formatting.\n\nPartial Character Data: ${JSON.stringify(partialChar)}`;
     
-    const result = await callGeminiAPI<{ model: string; prompt: string }, any>('/api/gemini/generate', {
+    const result = await callGeminiAPI<{ model: string; prompt: string }, GeminiResponse>('/api/gemini/generate', {
       model: textModel,
       prompt: prompt
     });
@@ -121,7 +126,11 @@ export const fleshOutCharacter = async (
       return { data: null, error: 'No content in Gemini response' };
     }
     
-    let text = candidate.content.parts[0].text;
+    let text = candidate.content.parts[0].text || '';
+    
+    if (!text) {
+        return { data: null, error: 'Empty content in Gemini response' };
+    }
     
     // Attempt to extract JSON from markdown code block
     const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/);
@@ -138,8 +147,8 @@ export const fleshOutCharacter = async (
       const now = new Date().toISOString();
       const fullCharacterData: any = {
         ...parsedData,
-        id: parsedData?.id || crypto.randomUUID?.() || `char-${now}`,
-        createdAt: parsedData?.createdAt || now,
+        id: partialChar.id || parsedData?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `char-${now}`),
+        createdAt: partialChar.createdAt || parsedData?.createdAt || now,
         updatedAt: now,
         currentVersion: parsedData?.currentVersion || 1,
         versions: parsedData?.versions || [],
@@ -295,7 +304,7 @@ async function textToSpeechGoogle(
     
     if (!audioBase64) {
       const validation = TTSResponseSchema.safeParse({ data: null, error: 'No audio content in response from Google TTS', provider: 'google' });
-      return validation.success ? validation.data : { data: null, error: 'No audio content in response from Google TTS', provider: 'google' };
+      return validation.success ? (validation.data as TTSResponse) : { data: null, error: 'No audio content in response from Google TTS', provider: 'google' };
     }
 
     const validation = TTSResponseSchema.safeParse({ 
@@ -303,7 +312,7 @@ async function textToSpeechGoogle(
       error: null,
       provider: 'google'
     });
-    return validation.success ? validation.data : { data: null, error: 'Invalid TTS response', provider: 'google' };
+    return validation.success ? (validation.data as TTSResponse) : { data: null, error: 'Invalid TTS response', provider: 'google' };
   } catch (error) {
     console.error('Error in Google TTS service:', error);
     throw error; // Re-throw to be handled by the caller
@@ -354,7 +363,7 @@ async function textToSpeechEdge(
       error: null,
       provider: 'edge'
     });
-    return validation.success ? validation.data : { data: null, error: 'Invalid TTS response', provider: 'edge' };
+    return validation.success ? (validation.data as TTSResponse) : { data: null, error: 'Invalid TTS response', provider: 'edge' };
   } catch (error) {
     console.error('Error in Edge TTS service:', error);
     throw error; // Re-throw to be handled by the caller
@@ -374,7 +383,7 @@ export const evolveCharacter = async (
     const { textModel } = useCharacterStore.getState();
     const evolutionPrompt = `Given the following character and the user's evolution prompt, generate an updated character profile.\n\nCurrent Character: ${JSON.stringify(character)}\n\nEvolution Prompt: ${prompt}`;
     
-    const result = await callGeminiAPI('/api/gemini/generate', {
+    const result = await callGeminiAPI<{ model: string; prompt: string }, GeminiResponse>('/api/gemini/generate', {
       model: textModel,
       prompt: evolutionPrompt
     });
@@ -388,7 +397,7 @@ export const evolveCharacter = async (
       return { data: null, error: 'No content in Gemini response' };
     }
     
-    const text = candidate.content.parts[0].text;
+    const text = candidate.content.parts[0].text || '';
     
     try {
       const updatedData = JSON.parse(text) as PartialCharacter;
@@ -417,7 +426,7 @@ export const generatePortrait = async (
     const descriptionPrompt = `Generate a detailed visual description for a character portrait based on the following traits. Focus on visual details like appearance, clothing, and expression. Be concise but vivid.\n\n${JSON.stringify(character)}`;
     
     // Get a detailed description of the portrait
-    const descriptionResult = await callGeminiAPI('/api/gemini/generate', {
+    const descriptionResult = await callGeminiAPI<{ model: string; prompt: string }, GeminiResponse>('/api/gemini/generate', {
       model: textModel,
       prompt: descriptionPrompt
     });
@@ -432,21 +441,24 @@ export const generatePortrait = async (
     }
     
     const description = descriptionCandidate.content.parts[0].text;
+    if (!description) {
+        return { data: null, error: 'Empty description in Gemini response' };
+    }
     
     // Generate the image using the description
     const imagePrompt = `${description}\n\nGenerate a portrait image based on this description.`;
-    const imageResult = await callGeminiAPI('/api/imagen/generate', {
+    const imageResult = await callGeminiAPI<{ prompt: string; model: string }, ImagenProxyResponse>('/api/imagen/generate', {
       prompt: imagePrompt,
       model: imageModel
     });
 
     if (!imageResult || !imageResult.imageData) {
       const validation = ImageResponseSchema.safeParse({ data: null, error: 'No image data in response from proxy' });
-      return validation.success ? validation.data : { data: null, error: 'No image data in response from proxy' };
+      return validation.success ? (validation.data as ImageResponse) : { data: null, error: 'No image data in response from proxy' };
     }
 
     const validation = ImageResponseSchema.safeParse({ data: `data:image/png;base64,${imageResult.imageData}`, error: null });
-    return validation.success ? validation.data : { data: null, error: 'Invalid image response' };
+    return validation.success ? (validation.data as ImageResponse) : { data: null, error: 'Invalid image response' };
   } catch (error) {
     console.error('Error generating portrait with Gemini:', error);
     return { data: null, error: error instanceof Error ? error.message : 'Failed to generate portrait' };
@@ -468,7 +480,7 @@ export const generateVocalDescription = async (
 
     const prompt = "Describe the voice in this audio clip. Focus on characteristics like pitch, tone, pace, and any unique qualities.";
 
-    const result = await callGeminiAPI('/api/gemini/generate', {
+    const result = await callGeminiAPI<{ model: string; contents: any[] }, GeminiResponse>('/api/gemini/generate', {
       model: textModel,
       contents: [
         {
@@ -489,7 +501,7 @@ export const generateVocalDescription = async (
       return { data: null, error: 'No content in Gemini response' };
     }
 
-    const description = candidate.content.parts[0].text;
+    const description = candidate.content.parts[0].text || null;
     return { data: description, error: null };
   } catch (error) {
     console.error('Error generating vocal description with Gemini:', error);

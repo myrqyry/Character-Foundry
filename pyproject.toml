@@ -12,6 +12,10 @@ dependencies = [
   "edge-tts"
 ]
 
+[tool.setuptools]
+packages = ["api"]
+py-modules = ["proxy"]
+
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"

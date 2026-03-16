@@ -36,7 +36,7 @@ export function createVersionFromCharacter(char: Character, changes: string[]): 
   const { id, createdAt, currentVersion, versions, ...charData } = char;
   return {
     ...charData,
-    vocalDescription: char.vocalDescription || null,
+    vocalDescription: char.vocalDescription ?? null,
     version: char.currentVersion,
     updatedAt: new Date().toISOString(),
     changes
@@ -54,7 +54,7 @@ export function updateCharacterWithVersion(
   const newVersion: CharacterVersion = {
     ...charData,
     ...updates,
-    vocalDescription: updates.vocalDescription ?? char.vocalDescription,
+    vocalDescription: updates.vocalDescription !== undefined ? updates.vocalDescription : char.vocalDescription,
     version: char.currentVersion,
     updatedAt: now,
     changes
@@ -87,7 +87,7 @@ export function restoreCharacterVersion(
       ...(char.versions || []).slice(-(MAX_VERSIONS - 1)),
       {
         ...versionToRestore,
-        vocalDescription: versionToRestore.vocalDescription || null,
+        vocalDescription: versionToRestore.vocalDescription ?? null,
         version: char.currentVersion + 1,
         updatedAt: now,
         changes: [`Restored from version ${versionToRestore.version}`]

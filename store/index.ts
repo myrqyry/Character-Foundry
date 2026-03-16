@@ -43,10 +43,10 @@ export const useCharacterStore = create<StoreState>()(
       editingCharacterId: null,
       genres: ['High Fantasy', 'Cyberpunk', 'Post-Apocalyptic', 'Slice of Life', 'Mythic', 'Historical Fiction'],
       ttsProvider: 'google', // Default TTS provider
-      googleTtsVoice: 'gemini-2.5-flash-tts', // Default Google TTS voice
+      googleTtsVoice: 'Kore', // Default Google TTS voice
       edgeTtsVoice: 'en-US-GuyNeural', // Default Edge TTS voice
       textModel: 'gemini-3-flash-preview', // Default text model
-      imageModel: 'gemini-2.5-flash-image', // Default image model
+      imageModel: 'gemini-3.1-flash-image-preview', // Default image model
 
       // Actions
       addCharacter: (characterData) => {

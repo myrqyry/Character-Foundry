@@ -1,3 +1,14 @@
+Metadata-Version: 2.4
+Name: the-character-foundry
+Version: 0.0.0
+Summary: The Character Foundry backend services
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+Requires-Dist: flask
+Requires-Dist: python-dotenv
+Requires-Dist: requests
+Requires-Dist: edge-tts
+
 # The Character Foundry
 
 Character Foundry is a React + TypeScript app for creating and versioning fictional character profiles, with optional AI-assisted generation (Gemini text/image/TTS) through Python API proxies.
@@ -30,7 +41,8 @@ Run these from the repo root:
 
 ```bash
 pnpm install
-uv sync
+uv venv
+uv pip install -r requirements.txt
 ```
 
 ## Environment variables
