@@ -13,6 +13,7 @@ import {
   useDeleteCharacter,
   useIndexCharacterLore
 } from '../hooks/useAI';
+<<<<<<< HEAD
 import { 
   useFleshOutCharacter, 
   useGeneratePortrait, 
@@ -23,6 +24,8 @@ import {
   useDeleteCharacter,
   useIndexCharacterLore
 } from '../hooks/useAI';
+=======
+>>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
 import { useCharacterStore } from '../store';
 import ImportExportMenu from './ImportExportMenu';
 import PortraitManager from './PortraitManager';
@@ -51,7 +54,10 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const updateCharacterMutation = useUpdateCharacter();
   const deleteCharacterMutation = useDeleteCharacter();
   const indexLoreMutation = useIndexCharacterLore();
+<<<<<<< HEAD
   const indexLoreMutation = useIndexCharacterLore();
+=======
+>>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
 
   useEffect(() => {
     setCharacter(initialCharacter || {});
@@ -148,11 +154,15 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     setCharacter(prev => ({ ...prev, voiceSampleTranscript: text }));
   };
 
+<<<<<<< HEAD
   const handleTranscriptChange = useCallback((text: string) => {
     setCharacter(prev => ({ ...prev, voiceSampleTranscript: text }));
   }, []);
 
   const handleEvolveCharacter = useCallback(async () => {
+=======
+  const handleEvolveCharacter = async () => {
+>>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
     if (!prompt.trim()) {
       toast.error('Please enter a prompt');
       return;
@@ -195,7 +205,10 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
       portraitBase64: character.portraitBase64 || null,
       voiceSampleBase64: character.voiceSampleBase64 || null,
       voiceSampleTranscript: character.voiceSampleTranscript || null,
+<<<<<<< HEAD
       voiceSampleTranscript: character.voiceSampleTranscript || null,
+=======
+>>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
       vocalDescription: character.vocalDescription || null,
       genre: character.genre
     };
@@ -211,6 +224,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
             onBack();
           } 
         }
+<<<<<<< HEAD
         { 
           onSuccess: (updatedChar) => {
             if (updatedChar) {
@@ -219,6 +233,8 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
             onBack();
           } 
         }
+=======
+>>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
       );
     } else {
       addCharacterMutation.mutate(characterToSave, {
@@ -228,6 +244,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
           }
           onBack();
         }
+<<<<<<< HEAD
         onSuccess: (newChar) => {
           if (newChar) {
             indexLoreMutation.mutate(newChar);
@@ -238,6 +255,11 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     }
   }, [character, initialCharacter, updateCharacterMutation, addCharacterMutation, indexLoreMutation, onBack]);
   }, [character, initialCharacter, updateCharacterMutation, addCharacterMutation, indexLoreMutation, onBack]);
+=======
+      });
+    }
+  }, [character, initialCharacter, updateCharacterMutation, addCharacterMutation, indexLoreMutation, onBack]);
+>>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
 
   const handleDelete = useCallback(() => {
     if (!initialCharacter?.id) return;
@@ -281,12 +303,18 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
           <VoiceManager
             voiceSampleBase64={character.voiceSampleBase64 || undefined}
             voiceSampleTranscript={character.voiceSampleTranscript}
+<<<<<<< HEAD
             voiceSampleTranscript={character.voiceSampleTranscript}
+=======
+>>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
             isAiLoading={generateVocalDescriptionMutation.isPending}
             handleFileChange={handleFileChange}
             handleGenerateVocalDescription={handleGenerateVocalDescription}
             handleTranscriptChange={handleTranscriptChange}
+<<<<<<< HEAD
             handleTranscriptChange={handleTranscriptChange}
+=======
+>>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
           />
         </div>
 
