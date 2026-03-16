@@ -6,6 +6,7 @@ import {
   generateVocalDescription,
   evolveCharacter
 } from '../services/geminiService';
+import { indexCharacterLore, searchCharacterLore } from '../services/memoryService';
 import { Character } from '../types';
 import toast from 'react-hot-toast';
 
@@ -151,5 +152,24 @@ export const useDeleteCharacter = () => {
       console.error('Error deleting character:', error);
       toast.error('Failed to delete character');
     },
+  });
+};
+
+// Index character lore mutation
+export const useIndexCharacterLore = () => {
+  return useMutation({
+    mutationFn: (character: Character) => indexCharacterLore(character),
+    onSuccess: (result) => {
+      if (result.error) {
+        console.error('Error indexing character lore:', result.error);
+      }
+    },
+  });
+};
+
+// Search character lore mutation
+export const useSearchCharacterLore = () => {
+  return useMutation({
+    mutationFn: ({ query, characterId }: { query: string; characterId?: string }) => searchCharacterLore(query, characterId),
   });
 };

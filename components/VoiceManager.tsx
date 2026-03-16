@@ -4,16 +4,20 @@ import Button from './Button';
 
 interface VoiceManagerProps {
   voiceSampleBase64: string | undefined;
+  voiceSampleTranscript: string | null | undefined;
   isAiLoading: boolean;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>, fileType: 'image' | 'audio') => void;
   handleGenerateVocalDescription: () => void;
+  handleTranscriptChange: (text: string) => void;
 }
 
 const VoiceManager: React.FC<VoiceManagerProps> = ({
   voiceSampleBase64,
+  voiceSampleTranscript,
   isAiLoading,
   handleFileChange,
   handleGenerateVocalDescription,
+  handleTranscriptChange,
 }) => {
   return (
     <div className="bg-gray-700 rounded-lg p-4 mt-6">
@@ -41,6 +45,22 @@ const VoiceManager: React.FC<VoiceManagerProps> = ({
           {isAiLoading ? 'Analyzing...' : 'AI Analyze Voice'}
         </Button>
       </div>
+
+      {voiceSampleBase64 && (
+        <div className="mt-4">
+          <label htmlFor="voiceSampleTranscript" className="block text-sm font-medium text-gray-300 mb-1">
+            Reference Transcript (Required for Cloning)
+          </label>
+          <textarea
+            id="voiceSampleTranscript"
+            rows={2}
+            className="w-full bg-gray-800 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+            placeholder="Exactly what is being said in the audio clip..."
+            value={voiceSampleTranscript || ''}
+            onChange={(e) => handleTranscriptChange(e.target.value)}
+          />
+        </div>
+      )}
     </div>
   );
 };

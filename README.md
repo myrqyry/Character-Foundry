@@ -2,13 +2,21 @@
 
 Character Foundry is a React + TypeScript app for creating and versioning fictional character profiles, with optional AI-assisted generation (Gemini text/image/TTS) through Python API proxies.
 
-## Current status (salvage in progress)
-This repository is being stabilized in-place with an incremental salvage plan. Current priority is reliability over new features.
+## Documentation
+- [Architecture Overview](docs/architecture.md)
+- [API Reference](docs/api-reference.md)
+- [Contributor Guide](docs/contributor-guide.md)
+- [Technical Overview (RAG & TTS)](docs/technical-overview.md)
+- [Salvage Plan](docs/salvage-plan.md)
 
-## What currently works reliably
-- Local character CRUD in the UI
-- Local persistence via Zustand
-- Character version history utilities
+## Current status
+This repository has been salvaged and stabilized. It is now a robust platform for AI character creation.
+
+## Key Features
+- **Local character CRUD** with automatic versioning.
+- **AI-powered generation** using Gemini 3 series.
+- **Lore Memory (RAG)**: Characters remember their past evolutions via ChromaDB.
+- **Advanced TTS**: Cloud synthesis (Google/Edge) and local voice cloning (Qwen3-TTS).
 
 ## Project structure
 - `index.tsx`, `App.tsx`: frontend entry + shell
@@ -59,10 +67,12 @@ VITE_API_BASE_URL=http://localhost:49152
 - `npm run check:foundation` – Python syntax check + frontend build
 
 ## API routes expected by frontend
-- `POST /api/gemini/generate`
-- `POST /api/imagen/generate`
-- `POST /api/tts/google`
-- `POST /api/tts/edge`
+- `POST /api/gemini/generate` (Text)
+- `POST /api/imagen/generate` (Portraits)
+- `POST /api/tts/google` (Native TTS)
+- `POST /api/tts/qwen` (Voice Cloning)
+- `POST /api/memory/index` (RAG Indexing)
+- `POST /api/memory/search` (RAG Retrieval)
 
 These can be served by `proxy.py` locally, or via `api/**` serverless handlers in deployment.
 

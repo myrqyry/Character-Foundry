@@ -10,7 +10,7 @@ type StoreState = {
   currentView: View;
   editingCharacterId: string | null;
   genres: Genre[];
-  ttsProvider: 'google' | 'edge';
+  ttsProvider: 'google' | 'edge' | 'qwen';
   googleTtsVoice: string;
   edgeTtsVoice: string;
   textModel: string;
@@ -26,7 +26,7 @@ type StoreState = {
   getCharacterVersion: (characterId: string, version: number) => CharacterVersion | null;
   getCharacterVersions: (characterId: string) => CharacterVersion[];
   restoreCharacterVersion: (characterId: string, version: number) => Character | null;
-  setTtsProvider: (provider: 'google' | 'edge') => void;
+  setTtsProvider: (provider: 'google' | 'edge' | 'qwen') => void;
   setGoogleTtsVoice: (voice: string) => void;
   setEdgeTtsVoice: (voice: string) => void;
   setTextModel: (model: string) => void;
@@ -157,7 +157,7 @@ export const useCharacterStore = create<StoreState>()(
         return restoredCharacter;
       },
 
-      setTtsProvider: (provider: 'google' | 'edge') => set({ ttsProvider: provider }),
+      setTtsProvider: (provider: 'google' | 'edge' | 'qwen') => set({ ttsProvider: provider }),
       setGoogleTtsVoice: (voice: string) => set({ googleTtsVoice: voice }),
       setEdgeTtsVoice: (voice: string) => set({ edgeTtsVoice: voice }),
       setTextModel: (model: string) => set({ textModel: model }),

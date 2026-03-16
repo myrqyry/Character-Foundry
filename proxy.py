@@ -2,6 +2,7 @@ import asyncio
 import base64
 import os
 import tempfile
+import json
 
 import edge_tts
 import requests
@@ -175,6 +176,22 @@ def edge_tts_generate():
         return jsonify({"audioContent": audio_content, "mimeType": "audio/mp3"}), 200
     except Exception as error:
         return jsonify({"error": f"Edge TTS proxy error: {str(error)}"}), 500
+
+
+from api.tts.qwen import handler as qwen_handler
+
+...
+
+
+@app.route("/api/tts/qwen", methods=["POST"])
+def qwen_tts_generate():
+    # Wrap the serverless handler for Flask
+    event = {
+        "body": request.get_data().decode("utf-8"),
+        "headers": dict(request.headers),
+    }
+    result = qwen_handler(event, None)
+    return jsonify(json.loads(result["body"])), result["statusCode"]
 
 
 if __name__ == "__main__":

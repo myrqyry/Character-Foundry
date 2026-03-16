@@ -8,6 +8,12 @@ Requires-Dist: flask
 Requires-Dist: python-dotenv
 Requires-Dist: requests
 Requires-Dist: edge-tts
+Requires-Dist: chromadb>=1.5.5
+Requires-Dist: google-genai>=1.67.0
+Requires-Dist: qwen-tts>=0.1.1
+Requires-Dist: torch>=2.10.0
+Requires-Dist: soundfile>=0.13.1
+Requires-Dist: transformers>=4.57.3
 
 # The Character Foundry
 
@@ -41,8 +47,7 @@ Run these from the repo root:
 
 ```bash
 pnpm install
-uv venv
-uv pip install -r requirements.txt
+uv sync
 ```
 
 ## Environment variables

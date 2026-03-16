@@ -18,7 +18,7 @@ export class APIError extends Error {
 export type CharacterResponse = z.infer<typeof CharacterResponseSchema>;
 
 // Types for TTS configuration
-type TTSProvider = 'google' | 'edge';
+type TTSProvider = 'google' | 'edge' | 'qwen';
 
 export interface TTSConfig {
   provider: TTSProvider;
@@ -33,6 +33,11 @@ export interface TTSConfig {
     rate?: string;
     pitch?: string;
     volume?: string;
+  };
+  qwen?: {
+    ref_audio?: string;
+    ref_text?: string;
+    language?: string;
   };
 }
 
@@ -207,7 +212,7 @@ interface TTSResponse {
 const defaultTTSConfig: TTSConfig = {
   provider: 'google',
   google: {
-    voice: 'gemini-2.5-flash-tts',
+    voice: 'Kore',
     languageCode: 'en-US',
     speakingRate: 1.0,
     pitch: 0.0
@@ -217,6 +222,9 @@ const defaultTTSConfig: TTSConfig = {
     rate: '+0%', // Use default rate (no change)
     pitch: '+0Hz', // Default pitch (no change)
     volume: '+0%', // Default volume (no change)
+  },
+  qwen: {
+    language: 'English'
   }
 };
 
@@ -236,11 +244,12 @@ export const textToSpeech = async (
   }
 
   // Get current TTS settings from the store
-  const { ttsProvider, googleTtsVoice, edgeTtsVoice } = useCharacterStore.getState();
+  const { ttsProvider, googleTtsVoice, edgeTtsVoice, characters, editingCharacterId } = useCharacterStore.getState();
+  const editingCharacter = characters.find(c => c.id === editingCharacterId);
 
   // Merge provided config with defaults and store settings
   const ttsConfig: TTSConfig = {
-    provider: ttsProvider,
+    provider: config.provider || ttsProvider,
     google: { 
       ...defaultTTSConfig.google, 
       voice: googleTtsVoice, 
@@ -250,6 +259,12 @@ export const textToSpeech = async (
       ...defaultTTSConfig.edge, 
       voice: edgeTtsVoice, 
       ...(config.edge || {}) 
+    },
+    qwen: {
+      ...defaultTTSConfig.qwen,
+      ref_audio: editingCharacter?.voiceSampleBase64 || undefined,
+      ref_text: editingCharacter?.voiceSampleTranscript || undefined,
+      ...(config.qwen || {})
     }
   };
 
@@ -258,6 +273,8 @@ export const textToSpeech = async (
       return textToSpeechGoogle(text, ttsConfig);
     } else if (ttsConfig.provider === 'edge') {
       return textToSpeechEdge(text, ttsConfig);
+    } else if (ttsConfig.provider === 'qwen') {
+      return textToSpeechQwen(text, ttsConfig);
     } else {
       throw new Error(`Unsupported TTS provider: ${ttsConfig.provider}`);
     }
@@ -367,6 +384,57 @@ async function textToSpeechEdge(
   } catch (error) {
     console.error('Error in Edge TTS service:', error);
     throw error; // Re-throw to be handled by the caller
+  }
+}
+
+/**
+ * Convert text to speech using Qwen3-TTS for voice cloning
+ */
+async function textToSpeechQwen(
+  text: string,
+  config: TTSConfig
+): Promise<TTSResponse> {
+  if (!text) return { data: null, error: 'No text provided', provider: 'qwen' };
+  if (!config.qwen?.ref_audio || !config.qwen?.ref_text) {
+    return { data: null, error: 'Reference audio and transcript are required for voice cloning', provider: 'qwen' };
+  }
+  
+  try {
+    const requestBody = {
+      text: text,
+      ref_audio: config.qwen.ref_audio,
+      ref_text: config.qwen.ref_text,
+      language: config.qwen.language || 'English'
+    };
+
+    const response = await fetch(`${PROXY_BASE_URL}/api/tts/qwen`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    const audioBase64 = responseData.audioContent;
+    
+    if (!audioBase64) {
+      return { data: null, error: 'No audio content in response from Qwen TTS', provider: 'qwen' };
+    }
+
+    return { 
+      data: `data:audio/wav;base64,${audioBase64}`, 
+      error: null,
+      provider: 'qwen'
+    };
+  } catch (error) {
+    console.error('Error in Qwen TTS service:', error);
+    throw error;
   }
 }
 
