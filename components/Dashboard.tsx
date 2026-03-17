@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { memo } from 'react';
 import { Character } from '../types';
 import { PlusIcon, UserIcon } from './Icons';
 import Button from './Button';
@@ -10,7 +9,7 @@ interface CharacterCardProps {
   onEdit: (id: string) => void;
 }
 
-const CharacterCard: React.FC<CharacterCardProps> = ({ character, onEdit }) => (
+const CharacterCard: React.FC<CharacterCardProps> = memo(({ character, onEdit }) => (
   <div 
     className="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-indigo-500/30 transition-all duration-300 flex flex-col cursor-pointer"
     onClick={() => onEdit(character.id)}
@@ -34,7 +33,7 @@ const CharacterCard: React.FC<CharacterCardProps> = ({ character, onEdit }) => (
       <p className="text-xs text-gray-500 mt-3 self-end">Created: {new Date(character.createdAt).toLocaleDateString()}</p>
     </div>
   </div>
-);
+));
 
 interface DashboardProps {
   characters: Character[];

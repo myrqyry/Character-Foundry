@@ -60,17 +60,17 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     };
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setCharacter(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+  }, []);
 
-  const handleGenreChange = (genre: Genre) => {
+  const handleGenreChange = useCallback((genre: Genre) => {
     setCharacter(prev => ({ ...prev, genre }));
-  };
+  }, []);
 
   const handleTagsChange = useCallback((name: string, values: string[]) => {
     setCharacter((prev) => ({
@@ -79,7 +79,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     }));
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'image' | 'audio') => {
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>, fileType: 'image' | 'audio') => {
     const file = e.target.files?.[0];
     if (file) {
       if (fileType === 'image') {
@@ -95,7 +95,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
         e.target.value = ''; // Reset input
       }
     }
-  };
+  }, []);
 
   const handleFleshOut = useCallback(async () => {
     fleshOutMutation.mutate(character, {
@@ -133,11 +133,11 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     });
   }, [character.voiceSampleBase64, generateVocalDescriptionMutation]);
 
-  const handleTranscriptChange = (text: string) => {
+  const handleTranscriptChange = useCallback((text: string) => {
     setCharacter(prev => ({ ...prev, voiceSampleTranscript: text }));
-  };
+  }, []);
 
-  const handleEvolveCharacter = async () => {
+  const handleEvolveCharacter = useCallback(async () => {
     if (!prompt.trim()) {
       toast.error('Please enter a prompt');
       return;
@@ -158,7 +158,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
         }
       }
     );
-  };
+  }, [character, prompt, evolveCharacterMutation]);
 
   const handleSave = useCallback(async () => {
     const validation = CharacterFormSchema.safeParse(character);

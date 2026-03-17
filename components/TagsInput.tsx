@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { XIcon } from './Icons';
 
 interface TagsInputProps {
@@ -8,7 +8,7 @@ interface TagsInputProps {
   onChange: (name: string, value: string[]) => void;
 }
 
-const TagsInput: React.FC<TagsInputProps> = ({ label, name, value, onChange }) => {
+const TagsInput: React.FC<TagsInputProps> = memo(({ label, name, value, onChange }) => {
   const [inputValue, setInputValue] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,6 +53,6 @@ const TagsInput: React.FC<TagsInputProps> = ({ label, name, value, onChange }) =
       </div>
     </div>
   );
-};
+});
 
 export default TagsInput;

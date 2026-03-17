@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { SparklesIcon, UserIcon, UploadIcon } from './Icons';
 import Button from './Button';
 
@@ -9,7 +9,7 @@ interface PortraitManagerProps {
   handleGeneratePortrait: () => void;
 }
 
-const PortraitManager: React.FC<PortraitManagerProps> = ({
+const PortraitManager: React.FC<PortraitManagerProps> = memo(({
   portraitBase64,
   isPortraitLoading,
   handleFileChange,
@@ -50,6 +50,6 @@ const PortraitManager: React.FC<PortraitManagerProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default PortraitManager;

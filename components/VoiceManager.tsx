@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { SparklesIcon, UploadIcon } from './Icons';
 import Button from './Button';
 
@@ -11,7 +11,7 @@ interface VoiceManagerProps {
   handleTranscriptChange: (text: string) => void;
 }
 
-const VoiceManager: React.FC<VoiceManagerProps> = ({
+const VoiceManager: React.FC<VoiceManagerProps> = memo(({
   voiceSampleBase64,
   voiceSampleTranscript,
   isAiLoading,
@@ -63,6 +63,6 @@ const VoiceManager: React.FC<VoiceManagerProps> = ({
       )}
     </div>
   );
-};
+});
 
 export default VoiceManager;

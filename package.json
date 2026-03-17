@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run test -- --run",
     "check:py": "python -m compileall -q api proxy.py",
-    "check:foundation": "npm run check:py && npm run build"
+    "check:foundation": "npm run check:py && npm run build",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@google/genai": "^1.45.0",
@@ -36,6 +37,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.2.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

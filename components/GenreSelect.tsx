@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Genre } from '../types';
 
 interface GenreSelectProps {
@@ -7,7 +7,7 @@ interface GenreSelectProps {
   genres: Genre[];
 }
 
-const GenreSelect: React.FC<GenreSelectProps> = ({ value, onChange, genres }) => {
+const GenreSelect: React.FC<GenreSelectProps> = memo(({ value, onChange, genres }) => {
   return (
     <div>
       <label htmlFor="genre" className="block text-sm font-medium text-indigo-300 mb-1">
@@ -31,6 +31,6 @@ const GenreSelect: React.FC<GenreSelectProps> = ({ value, onChange, genres }) =>
       </select>
     </div>
   );
-};
+});
 
 export default GenreSelect;

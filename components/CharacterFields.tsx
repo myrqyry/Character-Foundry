@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { InputField, TextareaField } from './FormInputs';
 import { UploadIcon } from './Icons';
 import characterTraits from '../character_traits.json';
@@ -35,7 +35,7 @@ const traitsConfig = characterTraits as {
   >;
 };
 
-const CharacterFields: React.FC<CharacterFieldsProps> = ({
+const CharacterFields: React.FC<CharacterFieldsProps> = memo(({
   character,
   handleChange,
   handleTagsChange,
@@ -137,6 +137,6 @@ const CharacterFields: React.FC<CharacterFieldsProps> = ({
       ))}
     </div>
   );
-};
+});
 
 export default CharacterFields;
