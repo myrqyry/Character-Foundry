@@ -101,14 +101,12 @@ export const useEvolveCharacter = () => {
 
 // Add character mutation
 export const useAddCharacter = () => {
-  const queryClient = useQueryClient();
   const { addCharacter } = useCharacterStore();
 
   return useMutation({
     mutationFn: (characterData: Omit<Character, 'id' | 'createdAt' | 'updatedAt' | 'currentVersion' | 'versions'>) =>
       Promise.resolve(addCharacter(characterData)),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: characterKeys.all });
       toast.success('Character created successfully!');
     },
     onError: (error) => {
@@ -120,14 +118,12 @@ export const useAddCharacter = () => {
 
 // Update character mutation
 export const useUpdateCharacter = () => {
-  const queryClient = useQueryClient();
   const { updateCharacter } = useCharacterStore();
 
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Character> }) =>
       Promise.resolve(updateCharacter(id, updates)),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: characterKeys.all });
       toast.success('Character updated successfully!');
     },
     onError: (error) => {
@@ -139,13 +135,11 @@ export const useUpdateCharacter = () => {
 
 // Delete character mutation
 export const useDeleteCharacter = () => {
-  const queryClient = useQueryClient();
   const { deleteCharacter } = useCharacterStore();
 
   return useMutation({
     mutationFn: (id: string) => Promise.resolve(deleteCharacter(id)),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: characterKeys.all });
       toast.success('Character deleted successfully!');
     },
     onError: (error) => {

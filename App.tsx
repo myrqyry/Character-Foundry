@@ -55,12 +55,13 @@ function App() {
         <h1 className="text-3xl font-bold text-indigo-400">The Character Foundry</h1>
         <div className="flex items-center space-x-4">
           <ThemeToggle />
-          <button 
+          <button
             onClick={() => setShowOptionsModal(true)}
             className="p-2 rounded-full hover:bg-gray-700 transition"
+            aria-label="Open Generation Options"
             title="Generation Options"
           >
-            <SettingsIcon className="w-6 h-6 text-gray-300" />
+            <SettingsIcon className="w-6 h-6 text-gray-300" aria-hidden="true" />
           </button>
         </div>
       </header>

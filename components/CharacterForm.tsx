@@ -222,41 +222,51 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
 
   return (
     <div className="max-w-6xl mx-auto p-4 bg-gray-800 text-white">
-      <div className="mb-6 flex justify-between items-center">
-        <button
-          onClick={onBack}
-          className="flex items-center text-indigo-300 hover:text-indigo-100 transition"
-        >
-          <ArrowLeftIcon className="mr-2 h-5 w-5" />
-          Back to Library
-        </button>
-        <h1 className="text-2xl font-bold">{initialCharacter ? 'Edit Character' : 'Create New Character'}</h1>
-        <div className="flex space-x-4">
-          <ImportExportMenu character={character} />
-          {initialCharacter && (
-            confirmDelete ? (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-red-400">Delete?</span>
+      <div className="mb-6">
+        {/* Top row: back + actions */}
+        <div className="flex justify-between items-center mb-2">
+          <button
+            onClick={onBack}
+            className="flex items-center text-indigo-300 hover:text-indigo-100 transition"
+          >
+            <ArrowLeftIcon className="mr-2 h-5 w-5" />
+            Back to Library
+          </button>
+          <div className="flex space-x-4 items-center">
+            <ImportExportMenu character={character} />
+            {initialCharacter && (
+              confirmDelete ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-red-400">Delete?</span>
+                  <button
+                    onClick={handleDelete}
+                    className="text-xs bg-red-600 hover:bg-red-500 text-white px-2 py-1 rounded transition"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="text-xs bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded transition"
+                  >
+                    No
+                  </button>
+                </div>
+              ) : (
                 <button
-                  onClick={handleDelete}
-                  className="text-xs bg-red-600 hover:bg-red-500 text-white px-2 py-1 rounded transition"
+                  onClick={() => setConfirmDelete(true)}
+                  className="text-red-400 hover:text-red-200 transition"
+                  aria-label="Delete character"
                 >
-                  Yes
+                  <TrashIcon className="h-5 w-5" aria-hidden="true" />
                 </button>
-                <button
-                  onClick={() => setConfirmDelete(false)}
-                  className="text-xs bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded transition"
-                >
-                  No
-                </button>
-              </div>
-            ) : (
-              <button onClick={() => setConfirmDelete(true)} className="text-red-400 hover:text-red-200 transition">
-                <TrashIcon className="h-5 w-5" />
-              </button>
-            )
-          )}
+              )
+            )}
+          </div>
         </div>
+        {/* Title on its own line to prevent squeeze on mobile */}
+        <h1 className="text-2xl font-bold text-center sm:text-left">
+          {initialCharacter ? 'Edit Character' : 'Create New Character'}
+        </h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

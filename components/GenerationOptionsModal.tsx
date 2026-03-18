@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from './Button';
 import { XIcon } from './Icons';
 import { useCharacterStore } from '../store';
@@ -151,6 +151,22 @@ const GenerationOptionsModal: React.FC<GenerationOptionsModalProps> = ({
   const [currentEdgePitch, setCurrentEdgePitch] = useState(edgeTtsPitch);
   const [currentEdgeVolume, setCurrentEdgeVolume] = useState(edgeTtsVolume);
 
+  // Re-sync local buffer from store each time the modal opens, so external
+  // store changes (e.g. import/reset) are reflected immediately.
+  useEffect(() => {
+    if (!isOpen) return;
+    setCurrentTtsProvider(ttsProvider);
+    setCurrentGoogleTtsVoice(googleTtsVoice);
+    setCurrentEdgeTtsVoice(edgeTtsVoice);
+    setCurrentTextModel(textModel);
+    setCurrentImageModel(imageModel);
+    setCurrentEdgeStyle(edgeTtsStyle);
+    setCurrentEdgeRole(edgeTtsRole);
+    setCurrentEdgeRate(edgeTtsRate);
+    setCurrentEdgePitch(edgeTtsPitch);
+    setCurrentEdgeVolume(edgeTtsVolume);
+  }, [isOpen]);
+
   const handleSave = () => {
     setTtsProvider(currentTtsProvider);
     setGoogleTtsVoice(currentGoogleTtsVoice);
@@ -169,215 +185,219 @@ const GenerationOptionsModal: React.FC<GenerationOptionsModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-11/12 max-w-md relative">
-        <button onClick={onClose} className="absolute top-3 right-3 text-gray-400 hover:text-white">
-          <XIcon className="h-6 w-6" />
-        </button>
-        <h2 className="text-2xl font-bold text-white mb-4">Generation Options</h2>
-
-        <div className="mb-4">
-          <label htmlFor="ttsProvider" className="block text-sm font-medium text-indigo-300 mb-1">TTS Provider</label>
-          <select
-            id="ttsProvider"
-            name="ttsProvider"
-            value={currentTtsProvider}
-            onChange={(e) => setCurrentTtsProvider(e.target.value as 'google' | 'edge' | 'qwen')}
-            className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-          >
-            <option value="google">Google TTS</option>
-            <option value="edge">MS Edge TTS</option>
-            <option value="qwen">Qwen TTS</option>
-          </select>
+      <div className="bg-gray-800 rounded-lg shadow-lg w-11/12 max-w-md relative flex flex-col max-h-[85vh]">
+        <div className="p-6 pb-0">
+          <button onClick={onClose} className="absolute top-3 right-3 text-gray-400 hover:text-white">
+            <XIcon className="h-6 w-6" />
+          </button>
+          <h2 className="text-2xl font-bold text-white mb-4">Generation Options</h2>
         </div>
 
-        {currentTtsProvider === 'google' && (
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="googleTtsVoice" className="block text-sm font-medium text-indigo-300 mb-1">Google TTS Voice</label>
-              <select
-                id="googleTtsVoice"
-                value={currentGoogleTtsVoice}
-                onChange={(e) => setCurrentGoogleTtsVoice(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-              >
-                {Object.entries(googleVoicesByLanguage).map(([language, voices]) => (
-                  <optgroup key={language} label={language}>
-                    {voices.map((voice) => (
-                      <option key={voice.value} value={voice.value}>
-                        {voice.name}
+        <div className="p-6 pt-2 overflow-y-auto flex-1">
+          <div className="mb-4">
+            <label htmlFor="ttsProvider" className="block text-sm font-medium text-indigo-300 mb-1">TTS Provider</label>
+            <select
+              id="ttsProvider"
+              name="ttsProvider"
+              value={currentTtsProvider}
+              onChange={(e) => setCurrentTtsProvider(e.target.value as 'google' | 'edge' | 'qwen')}
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+            >
+              <option value="google">Google TTS</option>
+              <option value="edge">MS Edge TTS</option>
+              <option value="qwen">Qwen TTS</option>
+            </select>
+          </div>
+
+          {currentTtsProvider === 'google' && (
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="googleTtsVoice" className="block text-sm font-medium text-indigo-300 mb-1">Google TTS Voice</label>
+                <select
+                  id="googleTtsVoice"
+                  value={currentGoogleTtsVoice}
+                  onChange={(e) => setCurrentGoogleTtsVoice(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                >
+                  {Object.entries(googleVoicesByLanguage).map(([language, voices]) => (
+                    <optgroup key={language} label={language}>
+                      {voices.map((voice) => (
+                        <option key={voice.value} value={voice.value}>
+                          {voice.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-indigo-300 mb-1">Custom Voice (if not listed)</label>
+                <input
+                  type="text"
+                  value={currentGoogleTtsVoice}
+                  onChange={(e) => setCurrentGoogleTtsVoice(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                  placeholder="e.g., gemini-2.5-flash-preview-tts"
+                />
+              </div>
+            </div>
+          )}
+
+          {currentTtsProvider === 'edge' && (
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="edgeTtsVoice" className="block text-sm font-medium text-indigo-300 mb-1">Voice</label>
+                <select
+                  id="edgeTtsVoice"
+                  value={currentEdgeTtsVoice}
+                  onChange={(e) => setCurrentEdgeTtsVoice(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                >
+                  <optgroup label="English (US)">
+                    {enUSVoices.map(voice => (
+                      <option key={voice} value={voice}>
+                        {voice.replace('en-US-', '')} (US)
                       </option>
                     ))}
                   </optgroup>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-indigo-300 mb-1">Custom Voice (if not listed)</label>
-              <input
-                type="text"
-                value={currentGoogleTtsVoice}
-                onChange={(e) => setCurrentGoogleTtsVoice(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-                placeholder="e.g., gemini-2.5-flash-preview-tts"
-              />
-            </div>
-          </div>
-        )}
-
-        {currentTtsProvider === 'edge' && (
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="edgeTtsVoice" className="block text-sm font-medium text-indigo-300 mb-1">Voice</label>
-              <select
-                id="edgeTtsVoice"
-                value={currentEdgeTtsVoice}
-                onChange={(e) => setCurrentEdgeTtsVoice(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-              >
-                <optgroup label="English (US)">
-                  {enUSVoices.map(voice => (
-                    <option key={voice} value={voice}>
-                      {voice.replace('en-US-', '')} (US)
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="English (UK)">
-                  {enGBVoices.map(voice => (
-                    <option key={voice} value={voice}>
-                      {voice.replace('en-GB-', '')} (UK)
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="Other Languages">
-                  {otherVoices.map(voice => {
-                    const [lang, , name] = voice.split('-');
-                    return (
+                  <optgroup label="English (UK)">
+                    {enGBVoices.map(voice => (
                       <option key={voice} value={voice}>
-                        {name} ({lang.toUpperCase()})
+                        {voice.replace('en-GB-', '')} (UK)
                       </option>
-                    );
-                  })}
-                </optgroup>
-              </select>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Other Languages">
+                    {otherVoices.map(voice => {
+                      const [lang, , name] = voice.split('-');
+                      return (
+                        <option key={voice} value={voice}>
+                          {name} ({lang.toUpperCase()})
+                        </option>
+                      );
+                    })}
+                  </optgroup>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="edgeTtsStyle" className="block text-sm font-medium text-indigo-300 mb-1">Style</label>
+                  <select
+                    id="edgeTtsStyle"
+                    value={currentEdgeStyle}
+                    onChange={(e) => setCurrentEdgeStyle(e.target.value)}
+                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                  >
+                    {voiceStyles.map(style => (
+                      <option key={style.value} value={style.value}>
+                        {style.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="edgeTtsRole" className="block text-sm font-medium text-indigo-300 mb-1">Role</label>
+                  <select
+                    id="edgeTtsRole"
+                    value={currentEdgeRole}
+                    onChange={(e) => setCurrentEdgeRole(e.target.value)}
+                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                  >
+                    {voiceRoles.map(role => (
+                      <option key={role.value} value={role.value}>
+                        {role.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label htmlFor="edgeTtsRate" className="block text-sm font-medium text-indigo-300 mb-1">Rate</label>
+                  <select
+                    id="edgeTtsRate"
+                    value={currentEdgeRate}
+                    onChange={(e) => setCurrentEdgeRate(e.target.value)}
+                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                  >
+                    {['-50%', '-25%', '+0%', '+25%', '+50%'].map(rate => (
+                      <option key={rate} value={rate}>
+                        {rate}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="edgeTtsPitch" className="block text-sm font-medium text-indigo-300 mb-1">Pitch</label>
+                  <select
+                    id="edgeTtsPitch"
+                    value={currentEdgePitch}
+                    onChange={(e) => setCurrentEdgePitch(e.target.value)}
+                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                  >
+                    {['-50Hz', '-25Hz', '+0Hz', '+25Hz', '+50Hz'].map(pitch => (
+                      <option key={pitch} value={pitch}>
+                        {pitch}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="edgeTtsVolume" className="block text-sm font-medium text-indigo-300 mb-1">Volume</label>
+                  <select
+                    id="edgeTtsVolume"
+                    value={currentEdgeVolume}
+                    onChange={(e) => setCurrentEdgeVolume(e.target.value)}
+                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                  >
+                    {['-50%', '-25%', '+0%', '+25%', '+50%'].map(vol => (
+                      <option key={vol} value={vol}>
+                        {vol}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="text-xs text-gray-400 mt-2">
+                <p>Note: Some voices may not support all styles and roles. The voice will use the closest match.</p>
+              </div>
             </div>
+          )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="edgeTtsStyle" className="block text-sm font-medium text-indigo-300 mb-1">Style</label>
-                <select
-                  id="edgeTtsStyle"
-                  value={currentEdgeStyle}
-                  onChange={(e) => setCurrentEdgeStyle(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-                >
-                  {voiceStyles.map(style => (
-                    <option key={style.value} value={style.value}>
-                      {style.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="edgeTtsRole" className="block text-sm font-medium text-indigo-300 mb-1">Role</label>
-                <select
-                  id="edgeTtsRole"
-                  value={currentEdgeRole}
-                  onChange={(e) => setCurrentEdgeRole(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-                >
-                  {voiceRoles.map(role => (
-                    <option key={role.value} value={role.value}>
-                      {role.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label htmlFor="edgeTtsRate" className="block text-sm font-medium text-indigo-300 mb-1">Rate</label>
-                <select
-                  id="edgeTtsRate"
-                  value={currentEdgeRate}
-                  onChange={(e) => setCurrentEdgeRate(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-                >
-                  {['-50%', '-25%', '+0%', '+25%', '+50%'].map(rate => (
-                    <option key={rate} value={rate}>
-                      {rate}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="edgeTtsPitch" className="block text-sm font-medium text-indigo-300 mb-1">Pitch</label>
-                <select
-                  id="edgeTtsPitch"
-                  value={currentEdgePitch}
-                  onChange={(e) => setCurrentEdgePitch(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-                >
-                  {['-50Hz', '-25Hz', '+0Hz', '+25Hz', '+50Hz'].map(pitch => (
-                    <option key={pitch} value={pitch}>
-                      {pitch}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="edgeTtsVolume" className="block text-sm font-medium text-indigo-300 mb-1">Volume</label>
-                <select
-                  id="edgeTtsVolume"
-                  value={currentEdgeVolume}
-                  onChange={(e) => setCurrentEdgeVolume(e.target.value)}
-                  className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-                >
-                  {['-50%', '-25%', '+0%', '+25%', '+50%'].map(vol => (
-                    <option key={vol} value={vol}>
-                      {vol}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="text-xs text-gray-400 mt-2">
-              <p>Note: Some voices may not support all styles and roles. The voice will use the closest match.</p>
-            </div>
+          <div className="mb-4">
+            <label htmlFor="textModel" className="block text-sm font-medium text-indigo-300 mb-1">Text Generation Model</label>
+            <input
+              id="textModel"
+              name="textModel"
+              type="text"
+              value={currentTextModel}
+              onChange={(e) => setCurrentTextModel(e.target.value)}
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              placeholder="e.g., gemini-2.5-flash"
+            />
           </div>
-        )}
 
-        <div className="mb-4">
-          <label htmlFor="textModel" className="block text-sm font-medium text-indigo-300 mb-1">Text Generation Model</label>
-          <input
-            id="textModel"
-            name="textModel"
-            type="text"
-            value={currentTextModel}
-            onChange={(e) => setCurrentTextModel(e.target.value)}
-            className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-            placeholder="e.g., gemini-2.5-flash"
-          />
+          <div className="mb-4">
+            <label htmlFor="imageModel" className="block text-sm font-medium text-indigo-300 mb-1">Image Generation Model</label>
+            <input
+              id="imageModel"
+              name="imageModel"
+              type="text"
+              value={currentImageModel}
+              onChange={(e) => setCurrentImageModel(e.target.value)}
+              className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              placeholder="e.g., gemini-2.0-flash-preview-image-generation"
+            />
+          </div>
         </div>
 
-        <div className="mb-4">
-          <label htmlFor="imageModel" className="block text-sm font-medium text-indigo-300 mb-1">Image Generation Model</label>
-          <input
-            id="imageModel"
-            name="imageModel"
-            type="text"
-            value={currentImageModel}
-            onChange={(e) => setCurrentImageModel(e.target.value)}
-            className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-            placeholder="e.g., gemini-2.0-flash-preview-image-generation"
-          />
-        </div>
-
-        <div className="flex justify-end space-x-3 mt-6">
+        <div className="p-6 pt-0 flex justify-end space-x-3">
           <Button onClick={onClose} variant="secondary">Cancel</Button>
           <Button onClick={handleSave}>Save Settings</Button>
         </div>

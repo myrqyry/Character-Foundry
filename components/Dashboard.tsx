@@ -1,8 +1,9 @@
-import React, { memo, useMemo, useState } from 'react';
+import React, { memo, useEffect, useMemo, useState } from 'react';
 import { Character, Genre } from '../types';
 import { PlusIcon, UserIcon } from './Icons';
 import Button from './Button';
 import ImportExportMenu from './ImportExportMenu';
+import { useCharacterStore } from '../store';
 
 interface CharacterCardProps {
   character: Character;
@@ -47,6 +48,19 @@ const Dashboard: React.FC<DashboardProps> = ({ characters, onEditCharacter, onCr
   const [search, setSearch] = useState('');
   const [filterGenre, setFilterGenre] = useState<Genre | 'All'>('All');
 
+  // Source genres from store so custom additions are reflected in the filter.
+  const storeGenres = useCharacterStore((s) => s.genres);
+  const genres: Array<Genre | 'All'> = ['All', ...storeGenres];
+
+  // Reset filter state when library empties, preventing a stale filter from
+  // hiding the first newly-created character.
+  useEffect(() => {
+    if (characters.length === 0) {
+      setSearch('');
+      setFilterGenre('All');
+    }
+  }, [characters.length]);
+
   const filtered = useMemo(() => {
     return characters.filter((c) => {
       const matchesSearch =
@@ -57,8 +71,6 @@ const Dashboard: React.FC<DashboardProps> = ({ characters, onEditCharacter, onCr
       return matchesSearch && matchesGenre;
     });
   }, [characters, search, filterGenre]);
-
-  const genres: Array<Genre | 'All'> = ['All', 'High Fantasy', 'Cyberpunk', 'Post-Apocalyptic', 'Slice of Life', 'Mythic', 'Historical Fiction'];
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
