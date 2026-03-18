@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Button from './Button';
 import { XIcon } from './Icons';
 import { useCharacterStore } from '../store';
+import { useShallow } from 'zustand/react/shallow';
 
 // Microsoft Edge TTS voice options
 const edgeVoices = [
@@ -92,62 +93,75 @@ const GenerationOptionsModal: React.FC<GenerationOptionsModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { 
-    ttsProvider, 
-    googleTtsVoice, 
-    edgeTtsVoice, 
-    textModel, 
-    imageModel, 
-    setTtsProvider, 
-    setGoogleTtsVoice, 
-    setEdgeTtsVoice, 
-    setTextModel, 
-    setImageModel 
-  } = useCharacterStore();
+  const {
+    ttsProvider,
+    googleTtsVoice,
+    edgeTtsVoice,
+    edgeTtsStyle,
+    edgeTtsRole,
+    edgeTtsRate,
+    edgeTtsPitch,
+    edgeTtsVolume,
+    textModel,
+    imageModel,
+    setTtsProvider,
+    setGoogleTtsVoice,
+    setEdgeTtsVoice,
+    setEdgeTtsStyle,
+    setEdgeTtsRole,
+    setEdgeTtsRate,
+    setEdgeTtsPitch,
+    setEdgeTtsVolume,
+    setTextModel,
+    setImageModel,
+  } = useCharacterStore(
+    useShallow((s) => ({
+      ttsProvider: s.ttsProvider,
+      googleTtsVoice: s.googleTtsVoice,
+      edgeTtsVoice: s.edgeTtsVoice,
+      edgeTtsStyle: s.edgeTtsStyle,
+      edgeTtsRole: s.edgeTtsRole,
+      edgeTtsRate: s.edgeTtsRate,
+      edgeTtsPitch: s.edgeTtsPitch,
+      edgeTtsVolume: s.edgeTtsVolume,
+      textModel: s.textModel,
+      imageModel: s.imageModel,
+      setTtsProvider: s.setTtsProvider,
+      setGoogleTtsVoice: s.setGoogleTtsVoice,
+      setEdgeTtsVoice: s.setEdgeTtsVoice,
+      setEdgeTtsStyle: s.setEdgeTtsStyle,
+      setEdgeTtsRole: s.setEdgeTtsRole,
+      setEdgeTtsRate: s.setEdgeTtsRate,
+      setEdgeTtsPitch: s.setEdgeTtsPitch,
+      setEdgeTtsVolume: s.setEdgeTtsVolume,
+      setTextModel: s.setTextModel,
+      setImageModel: s.setImageModel,
+    }))
+  );
 
-  // Local editing buffer — initialised once from the store (and localStorage) at mount.
-  // The useEffect sync pattern is intentionally removed: we don't want to re-sync after
-  // every store change because this modal is a self-contained settings form.
-  // The key prop on the parent (or re-mounting) will reset state if needed.
+  // Local editing buffer — initialised once from the store at mount.
   const [currentTtsProvider, setCurrentTtsProvider] = useState(ttsProvider);
   const [currentGoogleTtsVoice, setCurrentGoogleTtsVoice] = useState(googleTtsVoice);
   const [currentEdgeTtsVoice, setCurrentEdgeTtsVoice] = useState(edgeTtsVoice);
   const [currentTextModel, setCurrentTextModel] = useState(textModel);
   const [currentImageModel, setCurrentImageModel] = useState(imageModel);
-
-  // Lazy initialisers read localStorage exactly once at mount — no useEffect needed.
-  const [currentEdgeStyle, setCurrentEdgeStyle] = useState(
-    () => localStorage.getItem('edgeTtsStyle') ?? 'default'
-  );
-  const [currentEdgeRole, setCurrentEdgeRole] = useState(
-    () => localStorage.getItem('edgeTtsRole') ?? 'default'
-  );
-  const [currentEdgeRate, setCurrentEdgeRate] = useState(
-    () => localStorage.getItem('edgeTtsRate') ?? '+0%'
-  );
-  const [currentEdgePitch, setCurrentEdgePitch] = useState(
-    () => localStorage.getItem('edgeTtsPitch') ?? '+0Hz'
-  );
-  const [currentEdgeVolume, setCurrentEdgeVolume] = useState(
-    () => localStorage.getItem('edgeTtsVolume') ?? '+0%'
-  );
+  const [currentEdgeStyle, setCurrentEdgeStyle] = useState(edgeTtsStyle);
+  const [currentEdgeRole, setCurrentEdgeRole] = useState(edgeTtsRole);
+  const [currentEdgeRate, setCurrentEdgeRate] = useState(edgeTtsRate);
+  const [currentEdgePitch, setCurrentEdgePitch] = useState(edgeTtsPitch);
+  const [currentEdgeVolume, setCurrentEdgeVolume] = useState(edgeTtsVolume);
 
   const handleSave = () => {
     setTtsProvider(currentTtsProvider);
     setGoogleTtsVoice(currentGoogleTtsVoice);
     setEdgeTtsVoice(currentEdgeTtsVoice);
+    setEdgeTtsStyle(currentEdgeStyle);
+    setEdgeTtsRole(currentEdgeRole);
+    setEdgeTtsRate(currentEdgeRate);
+    setEdgeTtsPitch(currentEdgePitch);
+    setEdgeTtsVolume(currentEdgeVolume);
     setTextModel(currentTextModel);
     setImageModel(currentImageModel);
-    
-    // Save Edge TTS settings to localStorage
-    if (currentTtsProvider === 'edge') {
-      localStorage.setItem('edgeTtsStyle', currentEdgeStyle);
-      localStorage.setItem('edgeTtsRole', currentEdgeRole);
-      localStorage.setItem('edgeTtsRate', currentEdgeRate);
-      localStorage.setItem('edgeTtsPitch', currentEdgePitch);
-      localStorage.setItem('edgeTtsVolume', currentEdgeVolume);
-    }
-    
     onClose();
   };
 
@@ -167,11 +181,12 @@ const GenerationOptionsModal: React.FC<GenerationOptionsModalProps> = ({
             id="ttsProvider"
             name="ttsProvider"
             value={currentTtsProvider}
-            onChange={(e) => setCurrentTtsProvider(e.target.value as 'google' | 'edge')}
+            onChange={(e) => setCurrentTtsProvider(e.target.value as 'google' | 'edge' | 'qwen')}
             className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
           >
             <option value="google">Google TTS</option>
             <option value="edge">MS Edge TTS</option>
+            <option value="qwen">Qwen TTS</option>
           </select>
         </div>
 

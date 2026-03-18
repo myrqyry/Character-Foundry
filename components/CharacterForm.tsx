@@ -1,15 +1,15 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import toast from 'react-hot-toast';
 import { Character, Genre } from '../types';
 import Button from './Button';
 import { ArrowLeftIcon, SparklesIcon, TrashIcon } from './Icons';
-import { 
-  useFleshOutCharacter, 
-  useGeneratePortrait, 
-  useGenerateVocalDescription, 
-  useEvolveCharacter, 
-  useAddCharacter, 
-  useUpdateCharacter, 
+import {
+  useFleshOutCharacter,
+  useGeneratePortrait,
+  useGenerateVocalDescription,
+  useEvolveCharacter,
+  useAddCharacter,
+  useUpdateCharacter,
   useDeleteCharacter,
   useIndexCharacterLore
 } from '../hooks/useAI';
@@ -20,6 +20,8 @@ import VoiceManager from './VoiceManager';
 import CharacterFields from './CharacterFields';
 import { CharacterFormSchema } from '../schemas/validation';
 import { TextareaField } from './FormInputs';
+
+const AudioClipModal = lazy(() => import('./AudioClipModal'));
 
 interface CharacterFormProps {
   initialCharacter: Character | null;
@@ -32,6 +34,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const [prompt, setPrompt] = useState('');
   const [showAudioModal, setShowAudioModal] = useState(false);
   const [tempAudioFile, setTempAudioFile] = useState<File | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Keep a ref to the latest character value so callbacks don't need it in their dep arrays,
   // preventing invalidation on every keystroke.
@@ -49,20 +52,6 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const updateCharacterMutation = useUpdateCharacter();
   const deleteCharacterMutation = useDeleteCharacter();
   const indexLoreMutation = useIndexCharacterLore();
-
-  useEffect(() => {
-    const handleAudioClipped = (event: Event) => {
-      const customEvent = event as CustomEvent<string>;
-      setCharacter(prev => ({ ...prev, voiceSampleBase64: customEvent.detail }));
-      setShowAudioModal(false);
-      setTempAudioFile(null);
-    };
-
-    document.addEventListener('audioClipped', handleAudioClipped);
-    return () => {
-      document.removeEventListener('audioClipped', handleAudioClipped);
-    };
-  }, []);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -99,6 +88,17 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
         e.target.value = ''; // Reset input
       }
     }
+  }, []);
+
+  const handleAudioClipped = useCallback((base64: string) => {
+    setCharacter(prev => ({ ...prev, voiceSampleBase64: base64 }));
+    setShowAudioModal(false);
+    setTempAudioFile(null);
+  }, []);
+
+  const handleAudioModalClose = useCallback(() => {
+    setShowAudioModal(false);
+    setTempAudioFile(null);
   }, []);
 
   // Read character from ref inside callbacks so the callback identity stays stable
@@ -192,13 +192,13 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     if (initialCharacter?.id) {
       updateCharacterMutation.mutate(
         { id: initialCharacter.id, updates: characterToSave },
-        { 
+        {
           onSuccess: (updatedChar) => {
             if (updatedChar) {
               indexLoreMutation.mutate(updatedChar);
             }
             onBack();
-          } 
+          }
         }
       );
     } else {
@@ -215,17 +215,15 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
 
   const handleDelete = useCallback(() => {
     if (!initialCharacter?.id) return;
-    if (window.confirm('Are you sure you want to delete this character? This cannot be undone.')) {
-      deleteCharacterMutation.mutate(initialCharacter.id, {
-        onSuccess: () => onBack()
-      });
-    }
+    deleteCharacterMutation.mutate(initialCharacter.id, {
+      onSuccess: () => onBack()
+    });
   }, [initialCharacter, deleteCharacterMutation, onBack]);
 
   return (
     <div className="max-w-6xl mx-auto p-4 bg-gray-800 text-white">
       <div className="mb-6 flex justify-between items-center">
-        <button 
+        <button
           onClick={onBack}
           className="flex items-center text-indigo-300 hover:text-indigo-100 transition"
         >
@@ -236,9 +234,27 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
         <div className="flex space-x-4">
           <ImportExportMenu character={character} />
           {initialCharacter && (
-            <button onClick={handleDelete} className="text-red-400 hover:text-red-200 transition">
-              <TrashIcon className="h-5 w-5" />
-            </button>
+            confirmDelete ? (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-red-400">Delete?</span>
+                <button
+                  onClick={handleDelete}
+                  className="text-xs bg-red-600 hover:bg-red-500 text-white px-2 py-1 rounded transition"
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="text-xs bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded transition"
+                >
+                  No
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmDelete(true)} className="text-red-400 hover:text-red-200 transition">
+                <TrashIcon className="h-5 w-5" />
+              </button>
+            )
           )}
         </div>
       </div>
@@ -273,7 +289,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
           />
         </div>
       </div>
-      
+
       <div className="mt-8 pt-6 border-t border-gray-700">
         <h3 className="text-lg font-bold text-indigo-300 mb-4">Evolve with AI</h3>
         <div className="space-y-4">
@@ -304,21 +320,14 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
         </Button>
       </div>
 
-      {showAudioModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-4 rounded-lg w-11/12 max-w-3xl h-3/4">
-            <iframe 
-              src="/audio_modal.html" 
-              className="w-full h-full border-none"
-              onLoad={(e) => {
-                const iframe = e.target as HTMLIFrameElement;
-                if (iframe.contentWindow && tempAudioFile) {
-                  iframe.contentWindow.postMessage({ type: 'audioFile', file: tempAudioFile }, '*');
-                }
-              }}
-            ></iframe>
-          </div>
-        </div>
+      {showAudioModal && tempAudioFile && (
+        <Suspense fallback={null}>
+          <AudioClipModal
+            file={tempAudioFile}
+            onClipped={handleAudioClipped}
+            onClose={handleAudioModalClose}
+          />
+        </Suspense>
       )}
     </div>
   );

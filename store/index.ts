@@ -14,6 +14,11 @@ type StoreState = {
   ttsProvider: 'google' | 'edge' | 'qwen';
   googleTtsVoice: string;
   edgeTtsVoice: string;
+  edgeTtsStyle: string;
+  edgeTtsRole: string;
+  edgeTtsRate: string;
+  edgeTtsPitch: string;
+  edgeTtsVolume: string;
   textModel: string;
   imageModel: string;
 
@@ -30,6 +35,11 @@ type StoreState = {
   setTtsProvider: (provider: 'google' | 'edge' | 'qwen') => void;
   setGoogleTtsVoice: (voice: string) => void;
   setEdgeTtsVoice: (voice: string) => void;
+  setEdgeTtsStyle: (v: string) => void;
+  setEdgeTtsRole: (v: string) => void;
+  setEdgeTtsRate: (v: string) => void;
+  setEdgeTtsPitch: (v: string) => void;
+  setEdgeTtsVolume: (v: string) => void;
   setTextModel: (model: string) => void;
   setImageModel: (model: string) => void;
 }
@@ -46,6 +56,11 @@ export const useCharacterStore = create<StoreState>()(
       ttsProvider: 'google', // Default TTS provider
       googleTtsVoice: 'Kore', // Default Google TTS voice
       edgeTtsVoice: 'en-US-GuyNeural', // Default Edge TTS voice
+      edgeTtsStyle: 'default',
+      edgeTtsRole: 'default',
+      edgeTtsRate: '+0%',
+      edgeTtsPitch: '+0Hz',
+      edgeTtsVolume: '+0%',
       textModel: 'gemini-3-flash-preview', // Default text model
       imageModel: 'gemini-3.1-flash-image-preview', // Default image model
 
@@ -161,6 +176,11 @@ export const useCharacterStore = create<StoreState>()(
       setTtsProvider: (provider: 'google' | 'edge' | 'qwen') => set({ ttsProvider: provider }),
       setGoogleTtsVoice: (voice: string) => set({ googleTtsVoice: voice }),
       setEdgeTtsVoice: (voice: string) => set({ edgeTtsVoice: voice }),
+      setEdgeTtsStyle: (v: string) => set({ edgeTtsStyle: v }),
+      setEdgeTtsRole: (v: string) => set({ edgeTtsRole: v }),
+      setEdgeTtsRate: (v: string) => set({ edgeTtsRate: v }),
+      setEdgeTtsPitch: (v: string) => set({ edgeTtsPitch: v }),
+      setEdgeTtsVolume: (v: string) => set({ edgeTtsVolume: v }),
       setTextModel: (model: string) => set({ textModel: model }),
       setImageModel: (model: string) => set({ imageModel: model }),
     }),
@@ -191,6 +211,11 @@ export const useCharacterStore = create<StoreState>()(
         ttsProvider: state.ttsProvider,
         googleTtsVoice: state.googleTtsVoice,
         edgeTtsVoice: state.edgeTtsVoice,
+        edgeTtsStyle: state.edgeTtsStyle,
+        edgeTtsRole: state.edgeTtsRole,
+        edgeTtsRate: state.edgeTtsRate,
+        edgeTtsPitch: state.edgeTtsPitch,
+        edgeTtsVolume: state.edgeTtsVolume,
         textModel: state.textModel,
         imageModel: state.imageModel,
       })
@@ -216,6 +241,11 @@ export const useCharacterActions = () => useCharacterStore(
     setTtsProvider: state.setTtsProvider,
     setGoogleTtsVoice: state.setGoogleTtsVoice,
     setEdgeTtsVoice: state.setEdgeTtsVoice,
+    setEdgeTtsStyle: state.setEdgeTtsStyle,
+    setEdgeTtsRole: state.setEdgeTtsRole,
+    setEdgeTtsRate: state.setEdgeTtsRate,
+    setEdgeTtsPitch: state.setEdgeTtsPitch,
+    setEdgeTtsVolume: state.setEdgeTtsVolume,
     setTextModel: state.setTextModel,
     setImageModel: state.setImageModel,
   }))

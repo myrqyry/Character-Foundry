@@ -7,23 +7,27 @@ import { CharacterSchema } from '../schemas/validation';
 import toast from 'react-hot-toast';
 
 interface ImportExportMenuProps {
-  character: Partial<Character>;
+  character?: Partial<Character>;
+  characters?: Character[];
 }
 
-const ImportExportMenu: React.FC<ImportExportMenuProps> = ({ character }) => {
+const ImportExportMenu: React.FC<ImportExportMenuProps> = ({ character, characters }) => {
   const { importCharacters } = useCharacterActions();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = useCallback(() => {
-    const dataStr = JSON.stringify([character], null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-    const exportFileDefaultName = `${character.name?.replace(/\s+/g, '_') || 'character'}.json`;
+    const payload = characters ?? (character ? [character] : []);
+    const dataStr = JSON.stringify(payload, null, 2);
+    const filename = characters
+      ? `characters_export_${new Date().toISOString().slice(0, 10)}.json`
+      : `${character?.name?.replace(/\s+/g, '_') || 'character'}.json`;
 
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.setAttribute('download', filename);
     linkElement.click();
-  }, [character]);
+  }, [character, characters]);
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -39,7 +43,7 @@ const ImportExportMenu: React.FC<ImportExportMenuProps> = ({ character }) => {
           if (typeof text === 'string') {
             const json = JSON.parse(text);
             const charactersArray = Array.isArray(json) ? json : [json];
-            
+
             // Validate items
             const validCharacters: Character[] = [];
             let errors = 0;
@@ -58,8 +62,8 @@ const ImportExportMenu: React.FC<ImportExportMenuProps> = ({ character }) => {
             if (validCharacters.length > 0) {
               importCharacters(validCharacters);
               toast.success(`${validCharacters.length} character(s) imported!`);
-            } 
-            
+            }
+
             if (errors > 0) {
               toast.error(`${errors} character(s) failed validation and were skipped.`);
             }
