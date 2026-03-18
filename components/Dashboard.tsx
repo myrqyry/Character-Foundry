@@ -37,6 +37,7 @@ const CharacterCard = memo<CharacterCardProps>(function CharacterCard({ characte
     </div>
   );
 });
+CharacterCard.displayName = 'CharacterCard';
 
 interface DashboardProps {
   characters: Character[];

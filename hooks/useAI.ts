@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useCharacterStore } from '../store';
 import {
   fleshOutCharacter,
@@ -10,25 +10,12 @@ import { indexCharacterLore, searchCharacterLore } from '../services/memoryServi
 import { Character } from '../types';
 import toast from 'react-hot-toast';
 
-// Query keys
-export const characterKeys = {
-  all: ['characters'] as const,
-  lists: () => [...characterKeys.all, 'list'] as const,
-  list: (filters: string) => [...characterKeys.lists(), { filters }] as const,
-  details: () => [...characterKeys.all, 'detail'] as const,
-  detail: (id: string) => [...characterKeys.details(), id] as const,
-};
-
 // Flesh out character mutation
 export const useFleshOutCharacter = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (character: Partial<Character>) => fleshOutCharacter(character),
     onSuccess: (result) => {
       if (result.data) {
-        // Invalidate and refetch character data if needed
-        queryClient.invalidateQueries({ queryKey: characterKeys.all });
         toast.success('Character fleshed out successfully!');
       } else if (result.error) {
         toast.error(`Failed to flesh out character: ${result.error}`);
@@ -79,14 +66,11 @@ export const useGenerateVocalDescription = () => {
 
 // Evolve character mutation
 export const useEvolveCharacter = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ character, prompt }: { character: Partial<Character>; prompt: string }) =>
       evolveCharacter(character, prompt),
     onSuccess: (result) => {
       if (result.data) {
-        queryClient.invalidateQueries({ queryKey: characterKeys.all });
         toast.success('Character evolved successfully!');
       } else if (result.error) {
         toast.error(`Failed to evolve character: ${result.error}`);

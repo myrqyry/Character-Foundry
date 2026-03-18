@@ -153,18 +153,20 @@ const GenerationOptionsModal: React.FC<GenerationOptionsModalProps> = ({
 
   // Re-sync local buffer from store each time the modal opens, so external
   // store changes (e.g. import/reset) are reflected immediately.
+  // Uses getState() to read a fresh snapshot — avoids exhaustive-deps warnings.
   useEffect(() => {
     if (!isOpen) return;
-    setCurrentTtsProvider(ttsProvider);
-    setCurrentGoogleTtsVoice(googleTtsVoice);
-    setCurrentEdgeTtsVoice(edgeTtsVoice);
-    setCurrentTextModel(textModel);
-    setCurrentImageModel(imageModel);
-    setCurrentEdgeStyle(edgeTtsStyle);
-    setCurrentEdgeRole(edgeTtsRole);
-    setCurrentEdgeRate(edgeTtsRate);
-    setCurrentEdgePitch(edgeTtsPitch);
-    setCurrentEdgeVolume(edgeTtsVolume);
+    const s = useCharacterStore.getState();
+    setCurrentTtsProvider(s.ttsProvider);
+    setCurrentGoogleTtsVoice(s.googleTtsVoice);
+    setCurrentEdgeTtsVoice(s.edgeTtsVoice);
+    setCurrentTextModel(s.textModel);
+    setCurrentImageModel(s.imageModel);
+    setCurrentEdgeStyle(s.edgeTtsStyle);
+    setCurrentEdgeRole(s.edgeTtsRole);
+    setCurrentEdgeRate(s.edgeTtsRate);
+    setCurrentEdgePitch(s.edgeTtsPitch);
+    setCurrentEdgeVolume(s.edgeTtsVolume);
   }, [isOpen]);
 
   const handleSave = () => {
@@ -187,8 +189,8 @@ const GenerationOptionsModal: React.FC<GenerationOptionsModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-gray-800 rounded-lg shadow-lg w-11/12 max-w-md relative flex flex-col max-h-[85vh]">
         <div className="p-6 pb-0">
-          <button onClick={onClose} className="absolute top-3 right-3 text-gray-400 hover:text-white">
-            <XIcon className="h-6 w-6" />
+          <button onClick={onClose} className="absolute top-3 right-3 text-gray-400 hover:text-white" aria-label="Close Generation Options">
+            <XIcon className="h-6 w-6" aria-hidden="true" />
           </button>
           <h2 className="text-2xl font-bold text-white mb-4">Generation Options</h2>
         </div>
