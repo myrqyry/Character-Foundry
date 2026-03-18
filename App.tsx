@@ -1,16 +1,22 @@
-import { useState, useTransition } from 'react';
+import { lazy, Suspense, useMemo, useState, useTransition } from 'react';
 import { View } from './types';
-import Dashboard from './components/Dashboard';
-import CharacterForm from './components/CharacterForm';
 import { SparklesIcon, SettingsIcon } from './components/Icons';
 import { useCharacterStore, useCharacterActions } from './store';
-import GenerationOptionsModal from './components/GenerationOptionsModal';
 import { Toaster } from 'react-hot-toast';
 import ThemeToggle from './components/ThemeToggle';
 
+// Lazy-load heavy view components so only the active view's bundle is fetched.
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const CharacterForm = lazy(() => import('./components/CharacterForm'));
+const GenerationOptionsModal = lazy(() => import('./components/GenerationOptionsModal'));
+
 function App() {
-  // Use separate hooks for state and actions
-  const { characters, currentView, editingCharacterId } = useCharacterStore();
+  // Use fine-grained selectors so App only re-renders when these three specific
+  // values change — not when TTS/model settings or other store fields change.
+  const characters         = useCharacterStore((s) => s.characters);
+  const currentView        = useCharacterStore((s) => s.currentView);
+  const editingCharacterId = useCharacterStore((s) => s.editingCharacterId);
+
   const { setCurrentView, setEditingCharacterId } = useCharacterActions();
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   const [, startTransition] = useTransition();
@@ -36,7 +42,11 @@ function App() {
     });
   };
 
-  const editingCharacter = editingCharacterId ? characters.find(c => c.id === editingCharacterId) ?? null : null;
+  // Memoised so the linear scan only runs when the characters array or the target id changes.
+  const editingCharacter = useMemo(
+    () => editingCharacterId ? characters.find(c => c.id === editingCharacterId) ?? null : null,
+    [characters, editingCharacterId]
+  );
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
@@ -55,27 +65,38 @@ function App() {
         </div>
       </header>
       <main>
-        {currentView === View.Dashboard ? (
-          <Dashboard
-            characters={characters}
-            onCreateNew={handleCreateNew}
-            onEditCharacter={handleEditCharacter}
-          />
-        ) : (
-          <CharacterForm
-            initialCharacter={editingCharacter}
-            onBack={handleBackToDashboard}
-          />
-        )}
+        {/* Suspense boundary covers both lazy views — fallback is intentionally minimal */}
+        <Suspense fallback={<div className="flex items-center justify-center min-h-[50vh] text-gray-400">Loading…</div>}>
+          {currentView === View.Dashboard ? (
+            <Dashboard
+              characters={characters}
+              onCreateNew={handleCreateNew}
+              onEditCharacter={handleEditCharacter}
+            />
+          ) : (
+            // key prop causes CharacterForm to fully remount when the editing target changes,
+            // which replaces the useEffect-driven state-sync pattern with a clean reset.
+            <CharacterForm
+              key={editingCharacterId ?? 'new'}
+              initialCharacter={editingCharacter}
+              onBack={handleBackToDashboard}
+            />
+          )}
+        </Suspense>
       </main>
       <footer className="text-center py-4 text-gray-500 text-xs">
         <p className="flex items-center justify-center gap-1">Powered by The Character Foundry & <SparklesIcon className="w-4 h-4 text-indigo-400" /> Gemini API</p>
       </footer>
 
-      <GenerationOptionsModal 
-        isOpen={showOptionsModal} 
-        onClose={() => setShowOptionsModal(false)} 
-      />
+      {/* Conditionally rendered so the modal bundle is only loaded when opened */}
+      {showOptionsModal && (
+        <Suspense fallback={null}>
+          <GenerationOptionsModal
+            isOpen={showOptionsModal}
+            onClose={() => setShowOptionsModal(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { Character, Genre } from '../types';
 import Button from './Button';
@@ -13,19 +13,6 @@ import {
   useDeleteCharacter,
   useIndexCharacterLore
 } from '../hooks/useAI';
-<<<<<<< HEAD
-import { 
-  useFleshOutCharacter, 
-  useGeneratePortrait, 
-  useGenerateVocalDescription, 
-  useEvolveCharacter, 
-  useAddCharacter, 
-  useUpdateCharacter, 
-  useDeleteCharacter,
-  useIndexCharacterLore
-} from '../hooks/useAI';
-=======
->>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
 import { useCharacterStore } from '../store';
 import ImportExportMenu from './ImportExportMenu';
 import PortraitManager from './PortraitManager';
@@ -40,12 +27,20 @@ interface CharacterFormProps {
 }
 
 const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack }) => {
-  const [character, setCharacter] = useState<Partial<Character>>({});
+  // Initialize directly from prop — parent uses key={id} to reset on character change
+  const [character, setCharacter] = useState<Partial<Character>>(() => initialCharacter ?? {});
   const [prompt, setPrompt] = useState('');
   const [showAudioModal, setShowAudioModal] = useState(false);
-  const [tempAudioFile, setTempAudioFile] = useState<File | null>(null); // State for audio file
-  
-  const { genres } = useCharacterStore();
+  const [tempAudioFile, setTempAudioFile] = useState<File | null>(null);
+
+  // Keep a ref to the latest character value so callbacks don't need it in their dep arrays,
+  // preventing invalidation on every keystroke.
+  const characterRef = useRef(character);
+  useEffect(() => {
+    characterRef.current = character;
+  });
+
+  const { genres } = useCharacterStore((s) => ({ genres: s.genres }));
   const fleshOutMutation = useFleshOutCharacter();
   const generatePortraitMutation = useGeneratePortrait();
   const generateVocalDescriptionMutation = useGenerateVocalDescription();
@@ -54,14 +49,6 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
   const updateCharacterMutation = useUpdateCharacter();
   const deleteCharacterMutation = useDeleteCharacter();
   const indexLoreMutation = useIndexCharacterLore();
-<<<<<<< HEAD
-  const indexLoreMutation = useIndexCharacterLore();
-=======
->>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
-
-  useEffect(() => {
-    setCharacter(initialCharacter || {});
-  }, [initialCharacter]);
 
   useEffect(() => {
     const handleAudioClipped = (event: Event) => {
@@ -114,62 +101,54 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     }
   }, []);
 
+  // Read character from ref inside callbacks so the callback identity stays stable
+  // across every keystroke — only re-created when the mutation object itself changes.
   const handleFleshOut = useCallback(async () => {
-    fleshOutMutation.mutate(character, {
+    fleshOutMutation.mutate(characterRef.current, {
       onSuccess: (result) => {
         if (result.data) {
-          setCharacter(prev => ({...prev, ...result.data}));
+          setCharacter(prev => ({ ...prev, ...result.data }));
         }
       }
     });
-  }, [character, fleshOutMutation]);
+  }, [fleshOutMutation]);
 
   const handleGeneratePortrait = useCallback(async () => {
-    if (!character) return;
-    
-    generatePortraitMutation.mutate(character, {
+    generatePortraitMutation.mutate(characterRef.current, {
       onSuccess: (result) => {
         if (result.data) {
           setCharacter(prev => ({ ...prev, portraitBase64: result.data }));
         }
       }
     });
-  }, [character, generatePortraitMutation]);
+  }, [generatePortraitMutation]);
 
   const handleGenerateVocalDescription = useCallback(async () => {
-    if (!character.voiceSampleBase64) {
+    if (!characterRef.current.voiceSampleBase64) {
       toast.error("Please upload a voice sample first.");
       return;
     }
-    generateVocalDescriptionMutation.mutate(character.voiceSampleBase64, {
+    generateVocalDescriptionMutation.mutate(characterRef.current.voiceSampleBase64, {
       onSuccess: (result) => {
         if (result.data) {
           setCharacter(prev => ({ ...prev, vocalDescription: result.data }));
         }
       }
     });
-  }, [character.voiceSampleBase64, generateVocalDescriptionMutation]);
+  }, [generateVocalDescriptionMutation]);
 
-  const handleTranscriptChange = (text: string) => {
-    setCharacter(prev => ({ ...prev, voiceSampleTranscript: text }));
-  };
-
-<<<<<<< HEAD
   const handleTranscriptChange = useCallback((text: string) => {
     setCharacter(prev => ({ ...prev, voiceSampleTranscript: text }));
   }, []);
 
   const handleEvolveCharacter = useCallback(async () => {
-=======
-  const handleEvolveCharacter = async () => {
->>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
     if (!prompt.trim()) {
       toast.error('Please enter a prompt');
       return;
     }
 
     evolveCharacterMutation.mutate(
-      { character, prompt },
+      { character: characterRef.current, prompt },
       {
         onSuccess: (result) => {
           if (result.data) {
@@ -183,10 +162,11 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
         }
       }
     );
-  }, [character, prompt, evolveCharacterMutation]);
+  }, [prompt, evolveCharacterMutation]);
 
   const handleSave = useCallback(async () => {
-    const validation = CharacterFormSchema.safeParse(character);
+    const current = characterRef.current;
+    const validation = CharacterFormSchema.safeParse(current);
     if (!validation.success) {
       const errorMessages = validation.error.issues.map((err) => err.message).join(', ');
       toast.error(`Validation errors: ${errorMessages}`);
@@ -194,23 +174,19 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     }
 
     const characterToSave: Omit<Character, 'id' | 'createdAt' | 'updatedAt' | 'currentVersion' | 'versions'> = {
-      name: character.name || '',
-      title: character.title || '',
-      synopsis: character.synopsis || '',
-      personality: character.personality || '',
-      flaws: character.flaws || '',
-      strengths: character.strengths || '',
-      appearance: character.appearance || '',
-      backstory: character.backstory || '',
-      portraitBase64: character.portraitBase64 || null,
-      voiceSampleBase64: character.voiceSampleBase64 || null,
-      voiceSampleTranscript: character.voiceSampleTranscript || null,
-<<<<<<< HEAD
-      voiceSampleTranscript: character.voiceSampleTranscript || null,
-=======
->>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
-      vocalDescription: character.vocalDescription || null,
-      genre: character.genre
+      name: current.name || '',
+      title: current.title || '',
+      synopsis: current.synopsis || '',
+      personality: current.personality || '',
+      flaws: current.flaws || '',
+      strengths: current.strengths || '',
+      appearance: current.appearance || '',
+      backstory: current.backstory || '',
+      portraitBase64: current.portraitBase64 || null,
+      voiceSampleBase64: current.voiceSampleBase64 || null,
+      voiceSampleTranscript: current.voiceSampleTranscript || null,
+      vocalDescription: current.vocalDescription || null,
+      genre: current.genre
     };
 
     if (initialCharacter?.id) {
@@ -224,17 +200,6 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
             onBack();
           } 
         }
-<<<<<<< HEAD
-        { 
-          onSuccess: (updatedChar) => {
-            if (updatedChar) {
-              indexLoreMutation.mutate(updatedChar);
-            }
-            onBack();
-          } 
-        }
-=======
->>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
       );
     } else {
       addCharacterMutation.mutate(characterToSave, {
@@ -244,22 +209,9 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
           }
           onBack();
         }
-<<<<<<< HEAD
-        onSuccess: (newChar) => {
-          if (newChar) {
-            indexLoreMutation.mutate(newChar);
-          }
-          onBack();
-        }
       });
     }
-  }, [character, initialCharacter, updateCharacterMutation, addCharacterMutation, indexLoreMutation, onBack]);
-  }, [character, initialCharacter, updateCharacterMutation, addCharacterMutation, indexLoreMutation, onBack]);
-=======
-      });
-    }
-  }, [character, initialCharacter, updateCharacterMutation, addCharacterMutation, indexLoreMutation, onBack]);
->>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
+  }, [initialCharacter, updateCharacterMutation, addCharacterMutation, indexLoreMutation, onBack]);
 
   const handleDelete = useCallback(() => {
     if (!initialCharacter?.id) return;
@@ -303,18 +255,10 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
           <VoiceManager
             voiceSampleBase64={character.voiceSampleBase64 || undefined}
             voiceSampleTranscript={character.voiceSampleTranscript}
-<<<<<<< HEAD
-            voiceSampleTranscript={character.voiceSampleTranscript}
-=======
->>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
             isAiLoading={generateVocalDescriptionMutation.isPending}
             handleFileChange={handleFileChange}
             handleGenerateVocalDescription={handleGenerateVocalDescription}
             handleTranscriptChange={handleTranscriptChange}
-<<<<<<< HEAD
-            handleTranscriptChange={handleTranscriptChange}
-=======
->>>>>>> 8eb613f (feat: implement RAG memory, local voice cloning, and comprehensive documentation)
           />
         </div>
 

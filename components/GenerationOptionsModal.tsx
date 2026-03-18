@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Button from './Button';
 import { XIcon } from './Icons';
 import { useCharacterStore } from '../store';
@@ -15,6 +15,11 @@ const edgeVoices = [
   'ja-JP-NanamiNeural', 'ko-KR-SunHiNeural', 'pt-BR-FranciscaNeural', 'ru-RU-DariyaNeural',
   'zh-CN-XiaoxiaoNeural', 'zh-CN-YunxiNeural', 'hi-IN-SwaraNeural', 'ar-EG-SalmaNeural'
 ];
+
+// Pre-computed filtered voice lists — these are module-level constants and never change.
+const enUSVoices = edgeVoices.filter(v => v.startsWith('en-US'));
+const enGBVoices = edgeVoices.filter(v => v.startsWith('en-GB'));
+const otherVoices = edgeVoices.filter(v => !v.startsWith('en-'));
 
 // Google TTS voice options with supported languages
 const googleVoices = [
@@ -33,6 +38,15 @@ const googleVoices = [
   { name: 'Neural2-B (Portuguese)', value: 'pt-BR-Neural2-B', language: 'pt-BR' },
   { name: 'Wavenet-B (Russian)', value: 'ru-RU-Wavenet-B', language: 'ru-RU' }
 ];
+
+// Pre-computed grouping — googleVoices is a module-level constant so this runs once.
+const googleVoicesByLanguage = googleVoices.reduce((acc, voice) => {
+  if (!acc[voice.language]) {
+    acc[voice.language] = [];
+  }
+  acc[voice.language].push(voice);
+  return acc;
+}, {} as Record<string, typeof googleVoices>);
 
 // Voice styles and roles for Edge TTS
 const voiceStyles = [
@@ -91,36 +105,32 @@ const GenerationOptionsModal: React.FC<GenerationOptionsModalProps> = ({
     setImageModel 
   } = useCharacterStore();
 
+  // Local editing buffer — initialised once from the store (and localStorage) at mount.
+  // The useEffect sync pattern is intentionally removed: we don't want to re-sync after
+  // every store change because this modal is a self-contained settings form.
+  // The key prop on the parent (or re-mounting) will reset state if needed.
   const [currentTtsProvider, setCurrentTtsProvider] = useState(ttsProvider);
   const [currentGoogleTtsVoice, setCurrentGoogleTtsVoice] = useState(googleTtsVoice);
   const [currentEdgeTtsVoice, setCurrentEdgeTtsVoice] = useState(edgeTtsVoice);
   const [currentTextModel, setCurrentTextModel] = useState(textModel);
   const [currentImageModel, setCurrentImageModel] = useState(imageModel);
-  const [currentEdgeStyle, setCurrentEdgeStyle] = useState('default');
-  const [currentEdgeRole, setCurrentEdgeRole] = useState('default');
-  const [currentEdgeRate, setCurrentEdgeRate] = useState('+0%');
-  const [currentEdgePitch, setCurrentEdgePitch] = useState('+0Hz');
-  const [currentEdgeVolume, setCurrentEdgeVolume] = useState('+0%');
 
-  useEffect(() => {
-    setCurrentTtsProvider(ttsProvider);
-    setCurrentGoogleTtsVoice(googleTtsVoice);
-    setCurrentEdgeTtsVoice(edgeTtsVoice);
-    setCurrentTextModel(textModel);
-    setCurrentImageModel(imageModel);
-    // Load additional settings from localStorage if available
-    const savedEdgeStyle = localStorage.getItem('edgeTtsStyle') || 'default';
-    const savedEdgeRole = localStorage.getItem('edgeTtsRole') || 'default';
-    const savedEdgeRate = localStorage.getItem('edgeTtsRate') || '+0%';
-    const savedEdgePitch = localStorage.getItem('edgeTtsPitch') || '+0Hz';
-    const savedEdgeVolume = localStorage.getItem('edgeTtsVolume') || '+0%';
-    
-    setCurrentEdgeStyle(savedEdgeStyle);
-    setCurrentEdgeRole(savedEdgeRole);
-    setCurrentEdgeRate(savedEdgeRate);
-    setCurrentEdgePitch(savedEdgePitch);
-    setCurrentEdgeVolume(savedEdgeVolume);
-  }, [ttsProvider, googleTtsVoice, edgeTtsVoice, textModel, imageModel]);
+  // Lazy initialisers read localStorage exactly once at mount — no useEffect needed.
+  const [currentEdgeStyle, setCurrentEdgeStyle] = useState(
+    () => localStorage.getItem('edgeTtsStyle') ?? 'default'
+  );
+  const [currentEdgeRole, setCurrentEdgeRole] = useState(
+    () => localStorage.getItem('edgeTtsRole') ?? 'default'
+  );
+  const [currentEdgeRate, setCurrentEdgeRate] = useState(
+    () => localStorage.getItem('edgeTtsRate') ?? '+0%'
+  );
+  const [currentEdgePitch, setCurrentEdgePitch] = useState(
+    () => localStorage.getItem('edgeTtsPitch') ?? '+0Hz'
+  );
+  const [currentEdgeVolume, setCurrentEdgeVolume] = useState(
+    () => localStorage.getItem('edgeTtsVolume') ?? '+0%'
+  );
 
   const handleSave = () => {
     setTtsProvider(currentTtsProvider);
@@ -140,15 +150,6 @@ const GenerationOptionsModal: React.FC<GenerationOptionsModalProps> = ({
     
     onClose();
   };
-  
-  // Group Google voices by language for better organization
-  const googleVoicesByLanguage = googleVoices.reduce((acc, voice) => {
-    if (!acc[voice.language]) {
-      acc[voice.language] = [];
-    }
-    acc[voice.language].push(voice);
-    return acc;
-  }, {} as Record<string, typeof googleVoices>);
 
   if (!isOpen) return null;
 
@@ -219,21 +220,21 @@ const GenerationOptionsModal: React.FC<GenerationOptionsModalProps> = ({
                 className="w-full bg-gray-700 border border-gray-600 text-white rounded-md p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
               >
                 <optgroup label="English (US)">
-                  {edgeVoices.filter(v => v.startsWith('en-US')).map(voice => (
+                  {enUSVoices.map(voice => (
                     <option key={voice} value={voice}>
                       {voice.replace('en-US-', '')} (US)
                     </option>
                   ))}
                 </optgroup>
                 <optgroup label="English (UK)">
-                  {edgeVoices.filter(v => v.startsWith('en-GB')).map(voice => (
+                  {enGBVoices.map(voice => (
                     <option key={voice} value={voice}>
                       {voice.replace('en-GB-', '')} (UK)
                     </option>
                   ))}
                 </optgroup>
                 <optgroup label="Other Languages">
-                  {edgeVoices.filter(v => !v.startsWith('en-')).map(voice => {
+                  {otherVoices.map(voice => {
                     const [lang, , name] = voice.split('-');
                     return (
                       <option key={voice} value={voice}>

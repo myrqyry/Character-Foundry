@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
 import { Character, Genre, View, CharacterVersion } from '../types';
 import { getChanges, createVersionFromCharacter, updateCharacterWithVersion, restoreCharacterVersion } from './versioning';
 
@@ -59,10 +60,9 @@ export const useCharacterStore = create<StoreState>()(
           versions: []
         };
 
+        // New characters always have the most recent updatedAt, so prepend instead of sort.
         set((state) => ({
-          characters: [...state.characters, newCharacter].sort(
-            (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-          )
+          characters: [newCharacter, ...state.characters]
         }));
 
         return newCharacter;
@@ -102,14 +102,15 @@ export const useCharacterStore = create<StoreState>()(
 
       importCharacters: (newCharacters: Character | Character[]) => {
         const charactersArray = Array.isArray(newCharacters) ? newCharacters : [newCharacters];
-        set((state) => ({
-          characters: [
-            ...state.characters,
-            ...charactersArray.filter(
-              (newChar) => !state.characters.some((char) => char.id === newChar.id)
-            ),
-          ],
-        }));
+        set((state) => {
+          // Build a Set of existing IDs for O(1) duplicate detection instead of O(n×m).
+          const existingIds = new Set(state.characters.map((c) => c.id));
+          const toAdd = charactersArray.filter((c) => !existingIds.has(c.id));
+          if (toAdd.length === 0) return state; // nothing to do
+          return {
+            characters: [...state.characters, ...toAdd],
+          };
+        });
       },
 
       getCharacterVersion: (characterId: string, version: number) => {
@@ -197,9 +198,12 @@ export const useCharacterStore = create<StoreState>()(
   )
 );
 
-// Create a hook that provides actions separately from state
+// Create a hook that provides actions separately from state.
+// useShallow wraps the selector so that Zustand uses shallow equality on the returned object,
+// preventing re-renders when the action function references haven't changed
+// (Zustand action functions are stable, so this will almost never cause a re-render).
 export const useCharacterActions = () => useCharacterStore(
-  (state) => ({
+  useShallow((state) => ({
     addCharacter: state.addCharacter,
     updateCharacter: state.updateCharacter,
     deleteCharacter: state.deleteCharacter,
@@ -214,5 +218,5 @@ export const useCharacterActions = () => useCharacterStore(
     setEdgeTtsVoice: state.setEdgeTtsVoice,
     setTextModel: state.setTextModel,
     setImageModel: state.setImageModel,
-  })
+  }))
 );
