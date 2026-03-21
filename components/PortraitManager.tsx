@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
-import { SparklesIcon, UserIcon, UploadIcon } from './Icons';
+import { SparklesIcon, UserIcon } from './Icons';
 import Button from './Button';
+import UploadButton from './UploadButton';
 
 interface PortraitManagerProps {
   portraitBase64: string | undefined;
@@ -29,16 +30,11 @@ const PortraitManager: React.FC<PortraitManagerProps> = memo(({
         </div>
       )}
       <div className="flex space-x-2">
-        <label className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-4 py-2 transition flex items-center">
-          <UploadIcon className="mr-2 h-5 w-5" />
-          Upload Image
-          <input
-            type="file"
-            className="hidden"
-            accept="image/*"
-            onChange={(e) => handleFileChange(e, 'image')}
-          />
-        </label>
+        <UploadButton
+          label="Upload Image"
+          accept="image/*"
+          onChange={(e) => handleFileChange(e, 'image')}
+        />
         <Button
           onClick={handleGeneratePortrait}
           variant="secondary"

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fleshOutCharacter, generatePortrait, generateVocalDescription, textToSpeech } from './geminiService';
-import { useCharacterStore } from '../store';
+import { useSettingsStore } from '../store/settings';
 
 describe('geminiService', () => {
   beforeEach(() => {
     // Ensure store uses predictable models during tests
-    useCharacterStore.setState({ 
+    useSettingsStore.setState({ 
         textModel: 'test-text-model',
         imageModel: 'test-image-model',
         ttsProvider: 'google'

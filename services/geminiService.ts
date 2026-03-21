@@ -1,7 +1,10 @@
 import { z } from 'zod';
 import { Character, PartialCharacter } from '../types';
-import { CharacterResponseSchema, ImageResponseSchema, TTSResponseSchema } from '../schemas/validation';
-import { useCharacterStore } from '../store';
+import { CharacterResponseSchema, ImageResponseSchema } from '../schemas/validation';
+import { useSettingsStore } from '../store/settings';
+
+// Re-export TTS from its dedicated module
+export { textToSpeech, type TTSConfig, type TTSProvider } from './ttsService';
 
 // Custom API Error class for better error handling
 export class APIError extends Error {
@@ -18,29 +21,6 @@ export class APIError extends Error {
 export type CharacterResponse = z.infer<typeof CharacterResponseSchema>;
 
 // Types for TTS configuration
-type TTSProvider = 'google' | 'edge' | 'qwen';
-
-export interface TTSConfig {
-  provider: TTSProvider;
-  google?: {
-    voice?: string;
-    languageCode?: string;
-    speakingRate?: number;
-    pitch?: number;
-  };
-  edge?: {
-    voice?: string;
-    rate?: string;
-    pitch?: string;
-    volume?: string;
-  };
-  qwen?: {
-    ref_audio?: string;
-    ref_text?: string;
-    language?: string;
-  };
-}
-
 // Proxy server configuration
 const PROXY_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -114,7 +94,7 @@ export const fleshOutCharacter = async (
   partialChar: Partial<Character>
 ): Promise<CharacterResponse> => {
   try {
-    const { textModel } = useCharacterStore.getState();
+    const { textModel } = useSettingsStore.getState();
     const prompt = `Given the following partial character data, generate a complete character profile. Fill in any missing details to make the character rich and engaging. Return the character data as a JSON object. Do not include any markdown code block formatting.\n\nPartial Character Data: ${JSON.stringify(partialChar)}`;
     
     const result = await callGeminiAPI<{ model: string; prompt: string }, GeminiResponse>('/api/gemini/generate', {
@@ -145,18 +125,18 @@ export const fleshOutCharacter = async (
     
     // Attempt to parse the response as JSON
     try {
-      const parsedData = JSON.parse(text) as any;
+      const parsedData = JSON.parse(text) as Record<string, unknown>;
 
       // Normalize to a full Character shape for validation.
       // Some Gemini responses may omit required bookkeeping fields, so we synthesize them.
       const now = new Date().toISOString();
-      const fullCharacterData: any = {
+      const fullCharacterData: Record<string, unknown> = {
         ...parsedData,
-        id: partialChar.id || parsedData?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `char-${now}`),
-        createdAt: partialChar.createdAt || parsedData?.createdAt || now,
+        id: partialChar.id || (typeof parsedData.id === 'string' ? parsedData.id : undefined) || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `char-${now}`),
+        createdAt: partialChar.createdAt || (typeof parsedData.createdAt === 'string' ? parsedData.createdAt : undefined) || now,
         updatedAt: now,
-        currentVersion: parsedData?.currentVersion || 1,
-        versions: parsedData?.versions || [],
+        currentVersion: typeof parsedData.currentVersion === 'number' ? parsedData.currentVersion : 1,
+        versions: Array.isArray(parsedData.versions) ? parsedData.versions : [],
       };
 
       // Validate the parsed data
@@ -200,244 +180,6 @@ export const fleshOutCharacter = async (
   }
 };
 
-interface TTSResponse {
-  data: string | null;
-  error: string | null;
-  provider: TTSProvider;
-}
-
-/**
- * Default TTS configuration
- */
-const defaultTTSConfig: TTSConfig = {
-  provider: 'google',
-  google: {
-    voice: 'Kore',
-    languageCode: 'en-US',
-    speakingRate: 1.0,
-    pitch: 0.0
-  },
-  edge: {
-    voice: 'en-US-GuyNeural',
-    rate: '+0%', // Use default rate (no change)
-    pitch: '+0Hz', // Default pitch (no change)
-    volume: '+0%', // Default volume (no change)
-  },
-  qwen: {
-    language: 'English'
-  }
-};
-
-/**
- * Convert text to speech using the specified provider
- */
-export const textToSpeech = async (
-  text: string,
-  config: Partial<TTSConfig> = {}
-): Promise<TTSResponse> => {
-  if (!text) {
-    return { 
-      data: null, 
-      error: 'No text provided',
-      provider: config.provider || defaultTTSConfig.provider
-    };
-  }
-
-  // Get current TTS settings from the store
-  const { ttsProvider, googleTtsVoice, edgeTtsVoice, characters, editingCharacterId } = useCharacterStore.getState();
-  const editingCharacter = characters.find(c => c.id === editingCharacterId);
-
-  // Merge provided config with defaults and store settings
-  const ttsConfig: TTSConfig = {
-    provider: config.provider || ttsProvider,
-    google: { 
-      ...defaultTTSConfig.google, 
-      voice: googleTtsVoice, 
-      ...(config.google || {}) 
-    },
-    edge: { 
-      ...defaultTTSConfig.edge, 
-      voice: edgeTtsVoice, 
-      ...(config.edge || {}) 
-    },
-    qwen: {
-      ...defaultTTSConfig.qwen,
-      ref_audio: editingCharacter?.voiceSampleBase64 || undefined,
-      ref_text: editingCharacter?.voiceSampleTranscript || undefined,
-      ...(config.qwen || {})
-    }
-  };
-
-  try {
-    if (ttsConfig.provider === 'google') {
-      return textToSpeechGoogle(text, ttsConfig);
-    } else if (ttsConfig.provider === 'edge') {
-      return textToSpeechEdge(text, ttsConfig);
-    } else if (ttsConfig.provider === 'qwen') {
-      return textToSpeechQwen(text, ttsConfig);
-    } else {
-      throw new Error(`Unsupported TTS provider: ${ttsConfig.provider}`);
-    }
-  } catch (error) {
-    console.error(`Error with ${ttsConfig.provider} TTS service:`, error);
-    return { 
-      data: null, 
-      error: error instanceof Error ? error.message : 'Failed to generate speech',
-      provider: ttsConfig.provider
-    };
-  }
-};
-
-/**
- * Convert text to speech using Google's TTS via secure proxy
- */
-async function textToSpeechGoogle(
-  text: string,
-  config: TTSConfig
-): Promise<TTSResponse> {
-  if (!text) return { data: null, error: 'No text provided', provider: 'google' };
-  
-  try {
-    const requestBody = {
-      text: text,
-      voice_name: config.google?.voice || 'Kore',
-    };
-
-    const response = await fetch(`${PROXY_BASE_URL}/api/tts/google`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(errorData.error || `HTTP ${response.status}`);
-    }
-
-    const responseData = await response.json();
-    const audioBase64 = responseData.audioContent;
-    
-    if (!audioBase64) {
-      const validation = TTSResponseSchema.safeParse({ data: null, error: 'No audio content in response from Google TTS', provider: 'google' });
-      return validation.success ? (validation.data as TTSResponse) : { data: null, error: 'No audio content in response from Google TTS', provider: 'google' };
-    }
-
-    const validation = TTSResponseSchema.safeParse({ 
-      data: `data:audio/mp3;base64,${audioBase64}`, 
-      error: null,
-      provider: 'google'
-    });
-    return validation.success ? (validation.data as TTSResponse) : { data: null, error: 'Invalid TTS response', provider: 'google' };
-  } catch (error) {
-    console.error('Error in Google TTS service:', error);
-    throw error; // Re-throw to be handled by the caller
-  }
-}
-
-/**
- * Convert text to speech using edge-tts
- */
-async function textToSpeechEdge(
-  text: string,
-  config: TTSConfig
-): Promise<TTSResponse> {
-  if (!text) return { data: null, error: 'No text provided', provider: 'edge' };
-  
-  try {
-    const requestBody = {
-      text: text,
-      voice: config.edge?.voice || 'en-US-GuyNeural',
-      rate: config.edge?.rate || '+0%',
-      pitch: config.edge?.pitch || '+0Hz',
-      volume: config.edge?.volume || '+0%',
-    };
-
-    const response = await fetch(`${PROXY_BASE_URL}/api/tts/edge`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(errorData.error || `HTTP ${response.status}`);
-    }
-
-    const responseData = await response.json();
-    const audioBase64 = responseData.audioContent;
-    
-    if (!audioBase64) {
-      const validation = validateTTSResponse({ data: null, error: 'No audio content in response from Edge TTS', provider: 'edge' });
-      return validation.data!;
-    }
-
-    const validation = validateTTSResponse({ 
-      data: `data:audio/mp3;base64,${audioBase64}`, 
-      error: null,
-      provider: 'edge'
-    });
-    return validation.success ? (validation.data as TTSResponse) : { data: null, error: 'Invalid TTS response', provider: 'edge' };
-  } catch (error) {
-    console.error('Error in Edge TTS service:', error);
-    throw error; // Re-throw to be handled by the caller
-  }
-}
-
-/**
- * Convert text to speech using Qwen3-TTS for voice cloning
- */
-async function textToSpeechQwen(
-  text: string,
-  config: TTSConfig
-): Promise<TTSResponse> {
-  if (!text) return { data: null, error: 'No text provided', provider: 'qwen' };
-  if (!config.qwen?.ref_audio || !config.qwen?.ref_text) {
-    return { data: null, error: 'Reference audio and transcript are required for voice cloning', provider: 'qwen' };
-  }
-  
-  try {
-    const requestBody = {
-      text: text,
-      ref_audio: config.qwen.ref_audio,
-      ref_text: config.qwen.ref_text,
-      language: config.qwen.language || 'English'
-    };
-
-    const response = await fetch(`${PROXY_BASE_URL}/api/tts/qwen`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(errorData.error || `HTTP ${response.status}`);
-    }
-
-    const responseData = await response.json();
-    const audioBase64 = responseData.audioContent;
-    
-    if (!audioBase64) {
-      return { data: null, error: 'No audio content in response from Qwen TTS', provider: 'qwen' };
-    }
-
-    return { 
-      data: `data:audio/wav;base64,${audioBase64}`, 
-      error: null,
-      provider: 'qwen'
-    };
-  } catch (error) {
-    console.error('Error in Qwen TTS service:', error);
-    throw error;
-  }
-}
-
 export interface EvolutionResponse {
   data: PartialCharacter | null;
   error: string | null;
@@ -448,7 +190,7 @@ export const evolveCharacter = async (
   prompt: string
 ): Promise<EvolutionResponse> => {
   try {
-    const { textModel } = useCharacterStore.getState();
+    const { textModel } = useSettingsStore.getState();
     const evolutionPrompt = `Given the following character and the user's evolution prompt, generate an updated character profile.\n\nCurrent Character: ${JSON.stringify(character)}\n\nEvolution Prompt: ${prompt}`;
     
     const result = await callGeminiAPI<{ model: string; prompt: string }, GeminiResponse>('/api/gemini/generate', {
@@ -489,7 +231,7 @@ export const generatePortrait = async (
   character: PartialCharacter
 ): Promise<ImageResponse> => {
   try {
-    const { textModel, imageModel } = useCharacterStore.getState();
+    const { textModel, imageModel } = useSettingsStore.getState();
     // Generate a portrait description for the character
     const descriptionPrompt = `Generate a detailed visual description for a character portrait based on the following traits. Focus on visual details like appearance, clothing, and expression. Be concise but vivid.\n\n${JSON.stringify(character)}`;
     
@@ -542,13 +284,13 @@ export const generateVocalDescription = async (
   base64Audio: string
 ): Promise<VocalDescriptionResponse> => {
   try {
-    const { textModel } = useCharacterStore.getState();
+    const { textModel } = useSettingsStore.getState();
     // Remove the data URL prefix (e.g., "data:audio/wav;base64,")
     const audioData = base64Audio.split(',')[1];
 
     const prompt = "Describe the voice in this audio clip. Focus on characteristics like pitch, tone, pace, and any unique qualities.";
 
-    const result = await callGeminiAPI<{ model: string; contents: any[] }, GeminiResponse>('/api/gemini/generate', {
+    const result = await callGeminiAPI<{ model: string; contents: GeminiContent[] }, GeminiResponse>('/api/gemini/generate', {
       model: textModel,
       contents: [
         {
@@ -577,4 +319,3 @@ export const generateVocalDescription = async (
   }
 };
 
-const validateTTSResponse = (response: TTSResponse) => TTSResponseSchema.safeParse(response);

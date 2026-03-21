@@ -43,7 +43,7 @@ const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack 
     characterRef.current = character;
   });
 
-  const { genres } = useCharacterStore((s) => ({ genres: s.genres }));
+  const genres = useCharacterStore((s) => s.genres);
   const fleshOutMutation = useFleshOutCharacter();
   const generatePortraitMutation = useGeneratePortrait();
   const generateVocalDescriptionMutation = useGenerateVocalDescription();

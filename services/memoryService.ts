@@ -1,3 +1,5 @@
+import { Character } from '../types';
+
 const PROXY_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 export interface MemorySearchResult {
@@ -10,7 +12,7 @@ export interface MemorySearchResult {
   distance: number;
 }
 
-export const indexCharacterLore = async (character: any): Promise<{ message?: string; error?: string }> => {
+export const indexCharacterLore = async (character: Character): Promise<{ message?: string; error?: string }> => {
   try {
     const response = await fetch(`${PROXY_BASE_URL}/api/memory/index`, {
       method: 'POST',

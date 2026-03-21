@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Button from './Button';
 import { XIcon } from './Icons';
-import { useCharacterStore } from '../store';
+import { useSettingsStore } from '../store/settings';
 import { useShallow } from 'zustand/react/shallow';
 
 // Microsoft Edge TTS voice options
@@ -114,7 +114,7 @@ const GenerationOptionsModal: React.FC<GenerationOptionsModalProps> = ({
     setEdgeTtsVolume,
     setTextModel,
     setImageModel,
-  } = useCharacterStore(
+  } = useSettingsStore(
     useShallow((s) => ({
       ttsProvider: s.ttsProvider,
       googleTtsVoice: s.googleTtsVoice,
@@ -156,7 +156,7 @@ const GenerationOptionsModal: React.FC<GenerationOptionsModalProps> = ({
   // Uses getState() to read a fresh snapshot — avoids exhaustive-deps warnings.
   useEffect(() => {
     if (!isOpen) return;
-    const s = useCharacterStore.getState();
+    const s = useSettingsStore.getState();
     setCurrentTtsProvider(s.ttsProvider);
     setCurrentGoogleTtsVoice(s.googleTtsVoice);
     setCurrentEdgeTtsVoice(s.edgeTtsVoice);

@@ -1,10 +1,10 @@
 import React, { memo } from 'react';
 import { InputField, TextareaField } from './FormInputs';
-import { UploadIcon } from './Icons';
 import characterTraits from '../character_traits.json';
 import GenreSelect from './GenreSelect';
 import { Character, Genre } from '../types';
 import TagsInput from './TagsInput';
+import UploadButton from './UploadButton';
 
 type FieldType = 'text' | 'color' | 'textarea' | 'genre' | 'select' | 'tags' | 'file';
 
@@ -108,15 +108,7 @@ const CharacterFields: React.FC<CharacterFieldsProps> = memo(({
         return (
           <div key={name}>
             <label className="block text-sm font-medium text-indigo-300 mb-1">{label}</label>
-            <label className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-4 py-2 transition flex items-center">
-              <UploadIcon className="mr-2 h-5 w-5" />
-              Upload
-              <input
-                type="file"
-                className="hidden"
-                onChange={(e) => handleFileChange(e, 'audio')}
-              />
-            </label>
+            <UploadButton label="Upload" onChange={(e) => handleFileChange(e, 'audio')} />
           </div>
         );
       default:
