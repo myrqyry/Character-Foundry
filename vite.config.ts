@@ -1,8 +1,13 @@
 import path from 'path';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig(() => {
     return {
+      test: {
+        exclude: ['**/node_modules/**', '**/e2e/**'],
+        environment: 'jsdom',
+        globals: true,
+      },
       build: {
         rollupOptions: {
           // external: ['react-hot-toast'],

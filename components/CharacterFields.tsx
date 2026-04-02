@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { InputField, TextareaField } from './FormInputs';
 import characterTraits from '../character_traits.json';
 import GenreSelect from './GenreSelect';
-import { Character, Genre } from '../types';
+import { Genre, CharacterDraft } from '../types';
 import TagsInput from './TagsInput';
 import UploadButton from './UploadButton';
 
@@ -16,7 +16,7 @@ type CharacterFieldConfig = {
 };
 
 interface CharacterFieldsProps {
-  character: Partial<Character>;
+  character: CharacterDraft;
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   handleTagsChange: (name: string, values: string[]) => void;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>, fileType: 'image' | 'audio') => void;
@@ -45,7 +45,7 @@ const CharacterFields: React.FC<CharacterFieldsProps> = memo(({
 }) => {
   const renderField = (field: CharacterFieldConfig) => {
     const { name, type, label, options } = field;
-    const rawValue = character[name as keyof Character];
+    const rawValue = character[name as keyof CharacterDraft];
     const value = typeof rawValue === 'string' ? rawValue : '';
 
     switch (type) {

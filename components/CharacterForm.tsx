@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import toast from 'react-hot-toast';
-import { Character, Genre } from '../types';
+import { Character, Genre, CharacterDraft } from '../types';
 import Button from './Button';
 import { ArrowLeftIcon, SparklesIcon, TrashIcon } from './Icons';
 import {
@@ -30,7 +30,7 @@ interface CharacterFormProps {
 
 const CharacterForm: React.FC<CharacterFormProps> = ({ initialCharacter, onBack }) => {
   // Initialize directly from prop — parent uses key={id} to reset on character change
-  const [character, setCharacter] = useState<Partial<Character>>(() => initialCharacter ?? {});
+  const [character, setCharacter] = useState<CharacterDraft>(() => initialCharacter ?? {});
   const [prompt, setPrompt] = useState('');
   const [showAudioModal, setShowAudioModal] = useState(false);
   const [tempAudioFile, setTempAudioFile] = useState<File | null>(null);

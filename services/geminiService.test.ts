@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fleshOutCharacter, generatePortrait, generateVocalDescription, textToSpeech } from './geminiService';
+import { fleshOutCharacter, generatePortrait, generateVocalDescription, textToSpeech, evolveCharacter } from './geminiService';
 import { useSettingsStore } from '../store/settings';
+import { Character, Genre } from '../types';
 
 describe('geminiService', () => {
   beforeEach(() => {
@@ -14,6 +15,27 @@ describe('geminiService', () => {
     // Reset fetch mock
     vi.restoreAllMocks();
   });
+
+  const mockCharacter: Character = {
+    id: '1',
+    name: 'Test Character',
+    title: 'Explorer',
+    genre: 'High Fantasy' as Genre,
+    synopsis: 'A test synopsis',
+    personality: 'Curious',
+    flaws: 'Impulsive',
+    strengths: 'Brave',
+    appearance: 'Tall',
+    backstory: 'Grew up in a village',
+    portraitBase64: null,
+    voiceSampleBase64: null,
+    voiceSampleTranscript: null,
+    vocalDescription: null,
+    currentVersion: 1,
+    versions: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 
   describe('fleshOutCharacter', () => {
     it('should parse a valid JSON response from the API', async () => {
@@ -75,6 +97,47 @@ describe('geminiService', () => {
       expect(result.error).toBeNull();
       expect(result.data).toBe('data:image/png;base64,base64data');
     });
+
+    it('first generates a visual description', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ candidates: [{ content: { parts: [{ text: 'desc' }] } }] })
+        });
+
+        await generatePortrait(mockCharacter);
+    
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/gemini/generate'),
+          expect.objectContaining({
+            method: 'POST',
+            body: expect.stringContaining('visual description'),
+          })
+        );
+      });
+  });
+
+  describe('evolveCharacter', () => {
+    it('incorporates current character and prompt', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ candidates: [{ content: { parts: [{ text: '{}' }] } }] })
+        });
+
+        const prompt = 'Add a scar';
+        await evolveCharacter(mockCharacter, prompt);
+    
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/gemini/generate'),
+          expect.objectContaining({
+            method: 'POST',
+            body: expect.stringContaining('evolution'),
+          })
+        );
+        const lastCall = (global.fetch as any).mock.calls[0];
+        const body = lastCall[1].body;
+        expect(body).toContain('Add a scar');
+        expect(body).toContain('Test Character');
+      });
   });
 
   describe('generateVocalDescription', () => {

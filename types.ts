@@ -41,7 +41,24 @@ export interface Character {
   genre?: Genre;
 }
 
-export type PartialCharacter = Partial<Omit<Character, 'id' | 'createdAt'>>;
+export type CharacterDraft = {
+  id?: string;
+  name?: string;
+  title?: string;
+  synopsis?: string;
+  personality?: string;
+  flaws?: string;
+  strengths?: string;
+  appearance?: string;
+  backstory?: string;
+  portraitBase64?: string | null;
+  voiceSampleBase64?: string | null;
+  voiceSampleTranscript?: string | null;
+  vocalDescription?: string | null;
+  genre?: Genre;
+};
+
+export type PartialCharacter = Partial<Omit<Character, 'id' | 'createdAt' | 'updatedAt' | 'currentVersion' | 'versions'>>;
 
 export enum View {
   Dashboard,
