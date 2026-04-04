@@ -179,8 +179,8 @@ def edge_tts_generate():
 
 
 from api.tts.qwen import handler as qwen_handler
-
-...
+from api.memory.index import handler as memory_index_handler
+from api.memory.search import handler as memory_search_handler
 
 
 @app.route("/api/tts/qwen", methods=["POST"])
@@ -191,6 +191,28 @@ def qwen_tts_generate():
         "headers": dict(request.headers),
     }
     result = qwen_handler(event, None)
+    return jsonify(json.loads(result["body"])), result["statusCode"]
+
+
+@app.route("/api/memory/index", methods=["POST"])
+def memory_index():
+    # Wrap the serverless handler for Flask
+    event = {
+        "body": request.get_data().decode("utf-8"),
+        "headers": dict(request.headers),
+    }
+    result = memory_index_handler(event, None)
+    return jsonify(json.loads(result["body"])), result["statusCode"]
+
+
+@app.route("/api/memory/search", methods=["POST"])
+def memory_search():
+    # Wrap the serverless handler for Flask
+    event = {
+        "body": request.get_data().decode("utf-8"),
+        "headers": dict(request.headers),
+    }
+    result = memory_search_handler(event, None)
     return jsonify(json.loads(result["body"])), result["statusCode"]
 
 

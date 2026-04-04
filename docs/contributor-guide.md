@@ -71,7 +71,6 @@ If you want to add a new AI capability (e.g., character world-building):
 
 ## 6. Where to Get Help
 - Check the `docs/architecture.md` for a system overview.
-- Refer to `AGENTS.md` for detailed technical mandates.
 - For AI API details, see [Google Gemini Docs](https://ai.google.dev/docs).
 
 Happy coding!
