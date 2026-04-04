@@ -18,7 +18,6 @@ graph TD
     
     subgraph "External AI Services"
         Gemini[Google Gemini API]
-        Imagen[Google Imagen API]
         EdgeTTS[Edge TTS Service]
     end
     
@@ -26,7 +25,6 @@ graph TD
     Frontend -->|API Requests| Backend
     Backend -->|Indexes/Searches| ChromaDB
     Backend -->|Text/Image/Audio Generation| Gemini
-    Backend -->|Image Generation| Imagen
     Backend -->|Speech Synthesis| EdgeTTS
     Backend -->|Local Voice Cloning| Qwen[Local Qwen3-TTS]
 ```

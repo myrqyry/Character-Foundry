@@ -47,7 +47,7 @@ Audit findings identified drift between UI state, service orchestration, and bac
 ### 6) Backend transport owner: `api/**` and `proxy.py`
 - **Owns**:
   - HTTP request validation at route boundaries.
-  - Translation to provider APIs (Gemini/Imagen/TTS).
+  - Translation to provider APIs (Gemini/TTS).
 - **Must not own**:
   - Frontend UI semantics.
   - Persistent local domain behavior.
